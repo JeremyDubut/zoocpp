@@ -29,8 +29,8 @@ std::ostream& rpi_t::to_string(std::ostream& out) {
     return body->to_string(out << ") → ");
 }
 
-std::shared_ptr<raw_t> raw_t::update_body(std::shared_ptr<raw_t> body) {return body;}
-std::shared_ptr<raw_t> rabs_t::update_body(std::shared_ptr<raw_t> body) {
+raw_ptr raw_t::update_body(raw_ptr body) {return body;}
+raw_ptr rabs_t::update_body(raw_ptr body) {
     this->body = this->body->update_body(body);
     return shared_from_this();
 }

@@ -15,7 +15,7 @@ namespace foo
     {
         std::size_t currentLine = 1;
         
-        std::shared_ptr<raw_t> *yylval = nullptr;
+        raw_ptr *yylval = nullptr;
         location_t *yylloc = nullptr;
         
         void copyValue(const std::size_t leftTrim = 0, const std::size_t rightTrim = 0, const bool trimCr = false);
@@ -23,13 +23,13 @@ namespace foo
         
     public:
         Lexer(std::istream &in, const bool debug) : yy_foo_FlexLexer(&in) { yy_foo_FlexLexer::set_debug(debug); }
-        std::shared_ptr<raw_t> value();
+        raw_ptr value();
         
         using yy_foo_FlexLexer::yylex;
-        int yylex(std::shared_ptr<raw_t>* lval, location_t *const lloc);
+        int yylex(raw_ptr* lval, location_t *const lloc);
     };
     
-    inline std::shared_ptr<raw_t> Lexer::value() {return *yylval;}
+    inline raw_ptr Lexer::value() {return *yylval;}
     inline void Lexer::copyValue(const std::size_t leftTrim, const std::size_t rightTrim, const bool trimCr)
     {
         std::size_t endPos = yyleng - rightTrim;

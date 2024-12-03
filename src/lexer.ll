@@ -7,7 +7,7 @@
     using namespace foo;
     
     #undef  YY_DECL
-    #define YY_DECL int Lexer::yylex(std::shared_ptr<raw_t>* lval, location_t *const lloc)
+    #define YY_DECL int Lexer::yylex(raw_ptr* lval, location_t *const lloc)
     
     #define YY_USER_INIT yylval = lval; yylloc = lloc;
     

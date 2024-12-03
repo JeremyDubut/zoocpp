@@ -10,7 +10,7 @@
 
 %define api.namespace {foo}
 %define api.parser.class {Parser}
-%define api.value.type {std::shared_ptr<raw_t>}
+%define api.value.type {raw_ptr}
 %define api.location.type {location_t}
 
 %locations
@@ -22,7 +22,7 @@
 
 %parse-param {Lexer &lexer}
 %parse-param {const bool debug}
-%parse-param {std::shared_ptr<raw_t>* term}
+%parse-param {raw_ptr* term}
 
 %initial-action
 {

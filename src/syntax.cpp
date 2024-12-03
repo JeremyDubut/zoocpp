@@ -19,31 +19,31 @@ std::ostream& operator<< (std::ostream& out, term_t& term) {
     return out;
 }
 
-std::shared_ptr<value_t> term_t::eval(environment_t&) {
+value_ptr term_t::eval(environment_t&) {
     throw "Evaluation of an unknown term.";
 }
-std::shared_ptr<value_t> var_t::eval(environment_t& env) {
+value_ptr var_t::eval(environment_t& env) {
     return env.at(env.size()-1-index);
 }
-std::shared_ptr<value_t> abs_t::eval(environment_t& env) {
+value_ptr abs_t::eval(environment_t& env) {
     return std::make_shared<vabs_t>(var,env,body);
 }
-std::shared_ptr<value_t> let_t::eval(environment_t& env) {
+value_ptr let_t::eval(environment_t& env) {
     env.push_back(def->eval(env));
     return body->eval(env);
 }
-std::shared_ptr<value_t> app_t::eval(environment_t& env) {
+value_ptr app_t::eval(environment_t& env) {
     return left->eval(env)->eval_in_abs(right->eval(env));
     // return std::make_shared<vapp_t>(*left.eval(env),*right.eval(env));
 }
-std::shared_ptr<value_t> u_t::eval(environment_t&) {
+value_ptr u_t::eval(environment_t&) {
     return std::make_shared<vu_t>();
 }
-std::shared_ptr<value_t> pi_t::eval(environment_t& env) {
+value_ptr pi_t::eval(environment_t& env) {
     return std::make_shared<vpi_t>(var,typ->eval(env),env,body);
 }
 
-std::shared_ptr<term_t> term_t::nf(environment_t& env) {
+term_ptr term_t::nf(environment_t& env) {
     int length = env.size();
     return eval(env)->quote(length);
 }

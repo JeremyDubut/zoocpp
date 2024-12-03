@@ -4,13 +4,21 @@
 #include <memory>
 #include "syntax.hpp"
 
+struct closure_t;
+
 struct value_t : std::enable_shared_from_this<value_t> {
 
     virtual ~value_t() {}
 
     virtual std::ostream& to_string(std::ostream&);
-    virtual std::shared_ptr<value_t> eval_in_abs(std::shared_ptr<value_t>);
-    virtual std::shared_ptr<term_t> quote(int);
+    virtual value_ptr eval_in_abs(value_ptr);
+    virtual term_ptr quote(int);
+    virtual bool conv_VU(int);
+    virtual bool conv_VVAR(int, int);
+    virtual bool conv_VPI(int, value_ptr, closure_t&);
+    virtual bool conv_VABS(int, closure_t&);
+    virtual bool conv_VAPP(int, value_ptr, value_ptr);
+    virtual bool conv(int, value_ptr);
 
 };
 std::ostream& operator<< (std::ostream&, value_t&);
@@ -18,9 +26,9 @@ std::ostream& operator<< (std::ostream&, const environment_t&);
 
 struct closure_t {
     environment_t environment;
-    std::shared_ptr<term_t> term;
+    term_ptr term;
 
-    closure_t(environment_t& environment, std::shared_ptr<term_t> term) : environment {environment}, term {term} {}
+    closure_t(environment_t& environment, term_ptr term) : environment {environment}, term {term} {}
 };
 std::ostream& operator<< (std::ostream&, const closure_t&);
 
@@ -30,7 +38,9 @@ struct vvar_t : value_t {
     vvar_t(int level) : level {level} {}
 
     std::ostream& to_string(std::ostream&);
-    std::shared_ptr<term_t> quote(int);
+    term_ptr quote(int);
+    bool conv_VVAR(int, int);
+    bool conv(int, value_ptr);
 };
 
 struct vabs_t : value_t {
@@ -38,45 +48,57 @@ struct vabs_t : value_t {
     closure_t body;
 
     vabs_t(std::string& var, closure_t& closure) : var {var}, body {closure} {}
-    vabs_t(std::string& var, environment_t env, std::shared_ptr<term_t> term) : var {var}, body {closure_t(env,term)} {}
+    vabs_t(std::string& var, environment_t env, term_ptr term) : var {var}, body {closure_t(env,term)} {}
 
     std::ostream& to_string(std::ostream&);
-    std::shared_ptr<value_t> eval_in_abs(std::shared_ptr<value_t>);
-    std::shared_ptr<term_t> quote(int);
+    value_ptr eval_in_abs(value_ptr);
+    term_ptr quote(int);
+    bool conv_VU(int);
+    bool conv_VVAR(int, int);
+    bool conv_VABS(int, closure_t&);
+    bool conv_VAPP(int, value_ptr, value_ptr);
+    bool conv_VPI(int, value_ptr, closure_t&);
+    bool conv(int, value_ptr);
 };
 
 struct vapp_t : value_t {
-    std::shared_ptr<value_t> left;
-    std::shared_ptr<value_t> right;
+    value_ptr left;
+    value_ptr right;
 
-    vapp_t(std::shared_ptr<value_t> left,std::shared_ptr<value_t> right) : left {left}, right {right} {}
+    vapp_t(value_ptr left,value_ptr right) : left {left}, right {right} {}
     vapp_t() {}
 
     std::ostream& to_string(std::ostream&);
-    std::shared_ptr<term_t> quote(int);
+    term_ptr quote(int);
+    bool conv_VAPP(int, value_ptr, value_ptr);
+    bool conv(int, value_ptr);
 };
 
 struct vu_t : value_t {
 
     vu_t() {}
     std::ostream& to_string(std::ostream&);
-    std::shared_ptr<term_t> quote(int);
+    term_ptr quote(int);
+    bool conv_VU(int);
+    bool conv(int, value_ptr);
 };
 
 struct vpi_t : value_t {
     std::string var;
-    std::shared_ptr<value_t> typ;
+    value_ptr typ;
     closure_t body;
 
     vpi_t(std::string var,
-        std::shared_ptr<value_t> typ,
+        value_ptr typ,
         closure_t body) : 
         var {var}, typ {typ}, body {body} {}
     vpi_t(std::string var,
-        std::shared_ptr<value_t> typ,
+        value_ptr typ,
         environment_t env,
-        std::shared_ptr<term_t> term) : 
+        term_ptr term) : 
         var {var}, typ {typ}, body {closure_t(env,term)} {}
     std::ostream& to_string(std::ostream&);
-    std::shared_ptr<term_t> quote(int);
+    term_ptr quote(int);
+    bool conv_VPI(int, value_ptr, closure_t&);
+    bool conv(int, value_ptr);
 };
