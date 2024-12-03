@@ -34,10 +34,11 @@ struct vvar_t : value_t {
 };
 
 struct vabs_t : value_t {
+    std::string var;
     closure_t body;
 
-    vabs_t(closure_t& closure) : body {closure} {}
-    vabs_t(environment_t env, std::shared_ptr<term_t> term) : body {closure_t(env,term)} {}
+    vabs_t(std::string& var, closure_t& closure) : var {var}, body {closure} {}
+    vabs_t(std::string& var, environment_t env, std::shared_ptr<term_t> term) : var {var}, body {closure_t(env,term)} {}
 
     std::ostream& to_string(std::ostream&);
     std::shared_ptr<value_t> eval_in_abs(std::shared_ptr<value_t>);
@@ -51,6 +52,31 @@ struct vapp_t : value_t {
     vapp_t(std::shared_ptr<value_t> left,std::shared_ptr<value_t> right) : left {left}, right {right} {}
     vapp_t() {}
 
+    std::ostream& to_string(std::ostream&);
+    std::shared_ptr<term_t> quote(int);
+};
+
+struct vu_t : value_t {
+
+    vu_t() {}
+    std::ostream& to_string(std::ostream&);
+    std::shared_ptr<term_t> quote(int);
+};
+
+struct vpi_t : value_t {
+    std::string var;
+    std::shared_ptr<value_t> typ;
+    closure_t body;
+
+    vpi_t(std::string var,
+        std::shared_ptr<value_t> typ,
+        closure_t body) : 
+        var {var}, typ {typ}, body {body} {}
+    vpi_t(std::string var,
+        std::shared_ptr<value_t> typ,
+        environment_t env,
+        std::shared_ptr<term_t> term) : 
+        var {var}, typ {typ}, body {closure_t(env,term)} {}
     std::ostream& to_string(std::ostream&);
     std::shared_ptr<term_t> quote(int);
 };

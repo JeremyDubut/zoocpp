@@ -4,6 +4,8 @@ std::ostream& value_t::to_string(std::ostream& out) {return out << "Unknown valu
 std::ostream& vvar_t::to_string(std::ostream& out) {return out << "Var" << level;}
 std::ostream& vabs_t::to_string(std::ostream& out) {return out << "λ " << body;}
 std::ostream& vapp_t::to_string(std::ostream& out) {return out << "(" << left << " " << right << ")";}
+std::ostream& vu_t::to_string(std::ostream& out) {return out << "𝒰";}
+std::ostream& vpi_t::to_string(std::ostream& out) {return out << "(" << var << " : " << typ << ") → " << body;}
 
 std::ostream& operator<< (std::ostream& out, const environment_t& env) {
     int com = 0;
@@ -42,8 +44,17 @@ std::shared_ptr<term_t> vabs_t::quote(int l) {
     body.environment.push_back(std::make_shared<vvar_t>(l));
     std::shared_ptr<value_t> val = body.term->eval(body.environment);
     body.environment.pop_back();
-    return std::make_shared<abs_t>(val->quote(l+1));
+    return std::make_shared<abs_t>(var,val->quote(l+1));
 }
 std::shared_ptr<term_t> vapp_t::quote(int l) {
     return std::make_shared<app_t>(left->quote(l),right->quote(l));
+}
+std::shared_ptr<term_t> vu_t::quote(int) {
+    return std::make_shared<u_t>();
+}
+std::shared_ptr<term_t> vpi_t::quote(int l) {
+    body.environment.push_back(std::make_shared<vvar_t>(l));
+    std::shared_ptr<value_t> val = body.term->eval(body.environment);
+    body.environment.pop_back();
+    return std::make_shared<pi_t>(var,typ->quote(l),val->quote(l+1));
 }
