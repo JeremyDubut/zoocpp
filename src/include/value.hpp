@@ -5,6 +5,9 @@
 #include "syntax.hpp"
 
 struct closure_t;
+struct raw_t;
+typedef std::shared_ptr<raw_t> raw_ptr;
+struct context_t;
 
 struct value_t : std::enable_shared_from_this<value_t> {
 
@@ -19,6 +22,7 @@ struct value_t : std::enable_shared_from_this<value_t> {
     virtual bool conv_VABS(int, closure_t&);
     virtual bool conv_VAPP(int, value_ptr, value_ptr);
     virtual bool conv(int, value_ptr);
+    virtual term_ptr check_RABS(context_t&,std::string, raw_ptr);
 
 };
 std::ostream& operator<< (std::ostream&, value_t&);
@@ -101,4 +105,5 @@ struct vpi_t : value_t {
     term_ptr quote(int);
     bool conv_VPI(int, value_ptr, closure_t&);
     bool conv(int, value_ptr);
+    term_ptr check_RABS(context_t&,std::string, raw_ptr);
 };

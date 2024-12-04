@@ -1,4 +1,5 @@
 #include "value.hpp"
+#include "rsyntax.hpp"
 
 #define CAPP(v,body,val) \
     body.environment.push_back(v); \
@@ -123,3 +124,12 @@ bool vapp_t::conv(int l, value_ptr v) {
 bool vvar_t::conv(int l, value_ptr v) {
     return v->conv_VVAR(l,level);
 } 
+
+term_ptr value_t::check_RABS(context_t&,std::string, raw_ptr) {
+    throw "Needs to infer"; // TODO
+}
+term_ptr vpi_t::check_RABS(context_t& cont,std::string var, raw_ptr r) {
+    cont.new_var(var,typ);
+    TCAPP(std::make_shared<vvar_t>(cont.level));
+    return std::make_shared<abs_t>(var, r->check(cont,val));
+}
