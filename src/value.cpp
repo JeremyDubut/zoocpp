@@ -1,3 +1,4 @@
+#include <sstream>
 #include "value.hpp"
 #include "rsyntax.hpp"
 
@@ -10,25 +11,31 @@
 #define VCAPP(body,val) CAPP(VARL,body,val)
 #define VTCAPP TCAPP(VARL)
 #define CONVVAPP(v) vapp_t(v,VARL).conv(l+1,val)
+#define INFERFUN \
+    std::stringstream ss(""); \
+    ss << "Expected a function type and received type: " << *this; \
+    throw ss.str();
+
 
 std::ostream& value_t::to_string(std::ostream& out) {return out << "Unknown value";}
 std::ostream& vvar_t::to_string(std::ostream& out) {return out << "Var" << level;}
 std::ostream& vabs_t::to_string(std::ostream& out) {return out << "λ " << body;}
-std::ostream& vapp_t::to_string(std::ostream& out) {return out << "(" << left << " " << right << ")";}
+std::ostream& vapp_t::to_string(std::ostream& out) {return out << "(" << *left << " " << *right << ")";}
 std::ostream& vu_t::to_string(std::ostream& out) {return out << "𝒰";}
-std::ostream& vpi_t::to_string(std::ostream& out) {return out << "(" << var << " : " << typ << ") → " << body;}
+std::ostream& vpi_t::to_string(std::ostream& out) {return out << "(" << var << " : " << *typ << ") → " << body;}
 
 std::ostream& operator<< (std::ostream& out, const environment_t& env) {
     int com = 0;
     out << "[";
     for (auto it = env.begin(); it != env.end(); it++) {
         out << ((com==0)? "": ", ") << com << " => " << **it;
+        com++;
     }
     return out << "]";
 }
 
 std::ostream& operator<< (std::ostream& out, const closure_t& clo) {
-    return out << clo.environment << " " << clo.term;
+    return out << clo.environment << " " << *clo.term;
 }
 
 std::ostream& operator<< (std::ostream& out, value_t& value) {
@@ -126,10 +133,23 @@ bool vvar_t::conv(int l, value_ptr v) {
 } 
 
 term_ptr value_t::check_RABS(context_t&,std::string, raw_ptr) {
-    throw "Needs to infer"; // TODO
+    INFERFUN;
 }
 term_ptr vpi_t::check_RABS(context_t& cont,std::string var, raw_ptr r) {
     cont.new_var(var,typ);
     TCAPP(std::make_shared<vvar_t>(cont.level));
+    std::cout << "Checking inside lam " << *r << " of type " << *body.term << " evaluated to " << *val << std::endl;
     return std::make_shared<abs_t>(var, r->check(cont,val));
+}
+
+inferrance_t value_t::infer_RAPP(context_t& cont,term_ptr t,raw_ptr r) {
+    std::cout << "Inferring function type for " << *t << " and " << *r << std::endl;
+    std::cout << cont;
+    INFERFUN;
+}
+inferrance_t vpi_t::infer_RAPP(context_t& cont, term_ptr left, raw_ptr right) {
+    term_ptr rterm = right->check(cont, typ);
+    value_ptr rvalue = rterm->eval(body.environment);
+    TCAPP(rvalue);
+    return inferrance_t(std::make_shared<app_t>(left,rterm),val);
 }

@@ -1,0 +1,21 @@
+{
+    // Utilisez IntelliSense pour en savoir plus sur les attributs possibles.
+    // Pointez pour afficher la description des attributs existants.
+    // Pour plus d'informations, visitez : https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(lldb) Lancer",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/bin/ElaborationZoo",
+            "args": ["-f", "./examples/ex0.txt"],
+            "stopAtEntry": false,
+            "environment": [],
+            "externalConsole": false,
+            "cwd": "${workspaceFolder}",
+            "MIMode": "lldb",
+            "preLaunchTask": "CMake: build",
+        }
+    ]
+}

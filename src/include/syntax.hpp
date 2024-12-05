@@ -55,10 +55,11 @@ struct app_t : term_t {
 
 struct let_t : term_t {
     std::string var;
+    term_ptr typ;
     term_ptr def;
     term_ptr body;
 
-    let_t(std::string& var, term_ptr def,term_ptr body) : var {var}, def {def}, body {body} {}
+    let_t(std::string& var, term_ptr typ, term_ptr def, term_ptr body) : var {var}, typ {typ}, def {def}, body {body} {}
     let_t() {}
 
     std::string to_string();

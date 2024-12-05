@@ -9,6 +9,13 @@ struct raw_t;
 typedef std::shared_ptr<raw_t> raw_ptr;
 struct context_t;
 
+struct inferrance_t {
+    term_ptr term;
+    value_ptr typ;
+
+    inferrance_t(term_ptr term, value_ptr typ) : term {term}, typ {typ} {}
+};
+
 struct value_t : std::enable_shared_from_this<value_t> {
 
     virtual ~value_t() {}
@@ -23,6 +30,8 @@ struct value_t : std::enable_shared_from_this<value_t> {
     virtual bool conv_VAPP(int, value_ptr, value_ptr);
     virtual bool conv(int, value_ptr);
     virtual term_ptr check_RABS(context_t&,std::string, raw_ptr);
+    virtual inferrance_t infer_RAPP(context_t&,term_ptr,raw_ptr);
+    std::string val_in_ctx(context_t&);
 
 };
 std::ostream& operator<< (std::ostream&, value_t&);
@@ -106,4 +115,5 @@ struct vpi_t : value_t {
     bool conv_VPI(int, value_ptr, closure_t&);
     bool conv(int, value_ptr);
     term_ptr check_RABS(context_t&,std::string, raw_ptr);
+    inferrance_t infer_RAPP(context_t&,term_ptr,raw_ptr);
 };
