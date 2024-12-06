@@ -160,6 +160,4 @@ inferrance_t vpi_t::infer_RAPP(context_t& cont, term_ptr left, raw_ptr right) {
     return inferrance_t(std::make_shared<app_t>(left,rterm),val);
 }
 
-raw_ptr display(context_t&) {
-    throw "Display unknown value";
-}
+

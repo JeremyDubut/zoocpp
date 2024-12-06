@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
         // term_ptr inf = term->check(ctx,typ);
         inferrance_t inf = term->infer(ctx);
         std::cout << "=================" << std::endl;
-        std::cout << "Inferred type: " << *inf.typ->quote(0) << std::endl;
+        std::cout << "Inferred type: " << *inf.typ->quote(0)->display() << std::endl;
         std::cout << "Normal form: " << *inf.term->nf(ctx.environment) << std::endl;
         // std::cout << ctx;
 
