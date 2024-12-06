@@ -89,19 +89,23 @@ struct pi_t : term_t {
     raw_ptr display_rec(names_t&);
 };
 
-struct meta_t : term_t, metavar_t {
+struct meta_t : term_t {
 
-    meta_t() : metavar_t() {}
+    std::size_t index;
+
+    meta_t(): index {metavar_t().id} {}
+    meta_t(size_t index) : index {index} {}
     
     std::ostream& to_string(std::ostream&);
 
 };
 
-struct imeta_t : term_t, metavar_t {
+struct imeta_t : term_t {
 
+    std::size_t index;
     flags_t flags;
 
-    imeta_t() : metavar_t(), flags {flags_t()} {}
+    imeta_t() : index {metavar_t().id}, flags {flags_t()} {}
     
     std::ostream& to_string(std::ostream&);
 

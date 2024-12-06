@@ -25,7 +25,9 @@
     using Token = Parser::token;
 %}
 
-"\n" { ++currentLine; return Token::NL; }
+
+--[^"\n"]* ;
+"\n" { ++currentLine; }
 [[:space:]] ;
 "_" { return Token::HOLE; }
 "λ" { return Token::LAMBDA; }
@@ -39,6 +41,5 @@
 "in" { return Token::IN; }
 "(" { return Token::LPAR; }
 ")" { return Token::RPAR; }
---[^"\n"]* ;
 [[:alnum:]]+ { copyValue(); return Token::VAR; }
 <<EOF>> { return Token::YYEOF; }

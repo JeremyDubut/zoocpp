@@ -61,8 +61,7 @@
 %%
 
 main: def YYEOF { $$ = $1; *term = $$; }
-def: LET VAR COLON body EQ body IN NL def { $$ = std::make_shared<rlet_t>($2->get_name(),$4,$6,std::make_shared<rnl_t>($9)) ; }
-    | LET VAR COLON body EQ body IN def { $$ = std::make_shared<rlet_t>($2->get_name(),$4,$6,$8) ; }
+def: LET VAR COLON body EQ body IN def { $$ = std::make_shared<rlet_t>($2->get_name(),$4,$6,$8) ; }
     | body { $$ = $1; }
 body: LAMBDA varlist DOT body { $$ = $2; $$->update_body($4) ; }
     | LPAR body RPAR { $$ = $2; }

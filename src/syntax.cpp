@@ -12,8 +12,8 @@ std::ostream& app_t::to_string(std::ostream& out) {return out << "(" << *left <<
 std::ostream& let_t::to_string(std::ostream& out) {return out << "Let " << *def << " in" << std::endl << *body;}
 std::ostream& u_t::to_string(std::ostream& out) {return out << "𝒰";}
 std::ostream& pi_t::to_string(std::ostream& out) {return out << "(" << var << " : " << *typ << ") → " << *body;}
-std::ostream& meta_t::to_string(std::ostream& out) {return out << id;}
-std::ostream& imeta_t::to_string(std::ostream& out) {return out << id;}
+std::ostream& meta_t::to_string(std::ostream& out) {return out << "?" << index;}
+std::ostream& imeta_t::to_string(std::ostream& out) {return out << "?" << index;}
 std::ostream& operator<< (std::ostream& out, term_t& term) {return term.to_string(out);}
 
 value_ptr term_t::eval(environment_t&) {

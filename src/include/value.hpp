@@ -110,3 +110,19 @@ struct vpi_t : value_t {
     term_ptr check_RABS(context_t&,name_t, raw_ptr);
     inferrance_t infer_RAPP(context_t&,term_ptr,raw_ptr);
 };
+
+struct vflex_t : value_t {
+    std::size_t index;
+    spine_t spine;
+
+    vflex_t(std::size_t index) : index {index}, spine {spine_t()} {}
+    std::ostream& to_string(std::ostream&);
+};
+
+struct vrig_t : value_t {
+    std::size_t level;
+    spine_t spine;
+
+    vrig_t(std::size_t level) : level {level}, spine {spine_t()} {}
+    std::ostream& to_string(std::ostream&);
+};
