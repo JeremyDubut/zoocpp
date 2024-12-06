@@ -76,7 +76,7 @@ term_ptr raw_t::check(context_t& cont,value_ptr typ) {
     }
     else {
         std::stringstream ss(""); 
-        ss << "type mismatch between\n" << *typ << "\nand\n" << *inf.typ << std::endl;
+        ss << "type mismatch between\n" << *typ->quote(0)->display() << "\nand\n" << *inf.typ->quote(0)->display() << std::endl;
         ss << *this;
         ss << cont;
         throw ss.str();
