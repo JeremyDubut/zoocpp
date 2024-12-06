@@ -2,10 +2,9 @@
 %language "c++"
 
 %code requires {
-    #include <string>
     #include "location_t.hpp"
     #include "lexer.hpp"
-    #include "rsyntax.hpp"
+    #include "common.hpp"
 }
 
 %define api.namespace {foo}
@@ -43,14 +42,16 @@
     #define yylex lexer.yylex
 }
 
-%token LET IN COLON EQ TO DOT U
+%token NL
+%token LET IN COLON EQ TO DOT U 
+%token HOLE
 %token LAMBDA
 %token VAR
 %token EF
 %token APP
 %token LPAR RPAR
 
-%nonassoc LAMBDA DOT U
+%nonassoc LAMBDA DOT U HOLE NL
 %nonassoc VAR LPAR
 %right TO
 %nonassoc APP
@@ -60,11 +61,13 @@
 %%
 
 main: def YYEOF { $$ = $1; *term = $$; }
-def: LET VAR COLON body EQ body IN def { $$ = std::make_shared<rlet_t>($2->get_name(),$4,$6,$8) ; }
+def: LET VAR COLON body EQ body IN NL def { $$ = std::make_shared<rlet_t>($2->get_name(),$4,$6,std::make_shared<rnl_t>($9)) ; }
+    | LET VAR COLON body EQ body IN def { $$ = std::make_shared<rlet_t>($2->get_name(),$4,$6,$8) ; }
     | body { $$ = $1; }
 body: LAMBDA varlist DOT body { $$ = $2; $$->update_body($4) ; }
     | LPAR body RPAR { $$ = $2; }
     | U { $$ = std::make_shared<ru_t>(); }
+    | HOLE { $$ = std::make_shared<rhole_t>(); }
     | VAR { $$ = $VAR; };
     | LPAR VAR COLON body RPAR TO body { $$ = std::make_shared<rpi_t>($2->get_name(),$4,$7); }
     | body TO body { $$ = std::make_shared<rpi_t>("_",$1,$3); }

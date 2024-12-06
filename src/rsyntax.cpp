@@ -1,10 +1,12 @@
 #include <iostream>
 #include <sstream>
+#include "value.hpp"
 #include "rsyntax.hpp"
+#include "syntax.hpp"
 
 #define BIND_CONTEXT(v) \
     environment.push_back(v); \
-    types[var] = std::pair<value_ptr,int>(t,level); \
+    types[var] = std::pair<value_ptr,std::size_t>(t,level); \
     level++;
 #define VU std::make_shared<vu_t>()
 
@@ -24,7 +26,7 @@ std::ostream& rapp_t::to_string(std::ostream& out) {
 std::ostream& rlet_t::to_string(std::ostream& out) {
     typ->to_string(out << "Let " << var << " : ");
     def->to_string(out << " = ");
-    return body->to_string(out << " in" << std::endl);
+    return body->to_string(out << " in");
 }
 std::ostream& ru_t::to_string(std::ostream& out) {
     return out << "𝒰";
@@ -33,6 +35,8 @@ std::ostream& rpi_t::to_string(std::ostream& out) {
     typ->to_string(out << "(" << var << " : ");
     return body->to_string(out << ") → ");
 }
+std::ostream& rhole_t::to_string(std::ostream& out) {return out << "?_";}
+std::ostream& rnl_t::to_string(std::ostream& out) {return out << std::endl << *body;}
 
 raw_ptr raw_t::update_body(raw_ptr body) {return body;}
 raw_ptr rabs_t::update_body(raw_ptr body) {
@@ -40,16 +44,16 @@ raw_ptr rabs_t::update_body(raw_ptr body) {
     return shared_from_this();
 }
 
-std::string raw_t::get_name() {return "Unknown name";}
-std::string rvar_t::get_name() {return name;}
+name_t raw_t::get_name() {return "Unknown name";}
+name_t rvar_t::get_name() {return name;}
 
-void context_t::new_var(std::string var, value_ptr t) {
+void context_t::new_var(name_t var, value_ptr t) {
     BIND_CONTEXT(std::make_shared<vvar_t>(level));
 }
-void context_t::new_val(std::string var, value_ptr t, value_ptr v) {
+void context_t::new_val(name_t var, value_ptr t, value_ptr v) {
     BIND_CONTEXT(v);
 }
-void context_t::pop(std::string var) {
+void context_t::pop(name_t var) {
     environment.pop_back();
     level--;
     types.erase(var);

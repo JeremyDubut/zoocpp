@@ -40,39 +40,12 @@ int main(int argc, char* argv[])
 
         std::cout << "Parsed term: " << std::endl << *term << std::endl;
 
-        // term_ptr typ_a = std::make_shared<pi_t>(
-        //     "_",
-        //     std::make_shared<var_t>(0),
-        //     std::make_shared<var_t>(0)
-        // );
-        // value_ptr typ = std::make_shared<vpi_t>(
-        //     "A",
-        //     std::make_shared<vu_t>(),
-        //     environment_t(),
-        //     typ_a);
-        // std::cout << "Proposed type: " << *typ << std::endl;
-
-        context_t ctx = context_t();
-        environment_t env = environment_t();
-        // term_ptr inf = term->check(ctx,typ);
-        inferrance_t inf = term->infer(ctx);
-        std::cout << "=================" << std::endl;
-        std::cout << "Inferred type: " << *inf.typ->quote(0)->display() << std::endl;
-        std::cout << "Normal form: " << *inf.term->nf(ctx.environment) << std::endl;
-        // std::cout << ctx;
-
-        // environment_t env;
-
-        // // std::shared_ptr<value_t> value = term->eval(env);
-
-        // // // std::cout << "Weak head normal form: " << std::endl;
-        // // // std::cout << *value << std::endl;
-
-        // env = environment_t();
-
-        // std::shared_ptr<term_t> nf = term->nf(env);
-        // std::cout << "Normal form: " << std::endl;
-        // std::cout << *nf << std::endl;
+        // context_t ctx = context_t();
+        // environment_t env = environment_t();
+        // inferrance_t inf = term->infer(ctx);
+        // std::cout << "=================" << std::endl;
+        // std::cout << "Inferred type: " << *inf.typ->quote(0)->display() << std::endl;
+        // std::cout << "Normal form: " << *inf.term->nf(ctx.environment) << std::endl;
 
         return res;
     }

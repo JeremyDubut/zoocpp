@@ -14,7 +14,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 # Flex and Bison setup
 find_package(FLEX REQUIRED)
-find_package(BISON REQUIRED)
+find_package(BISON 3.2)
 
 set(FLEX_OUTPUT ${CMAKE_BINARY_DIR}/lex.yy_foo_.cc)
 set(BISON_OUTPUT ${CMAKE_BINARY_DIR}/parser.tab.cc)
@@ -36,6 +36,7 @@ set(SOURCES
     src/syntax.cpp
     src/value.cpp
     src/rsyntax.cpp
+    src/metavar.cpp
     ${FLEX_Lexer_OUTPUTS}
     ${BISON_Parser_OUTPUTS}
 )

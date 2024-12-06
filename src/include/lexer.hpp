@@ -34,7 +34,7 @@ namespace foo
     {
         std::size_t endPos = yyleng - rightTrim;
         if (trimCr && endPos != 0 && yytext[endPos - 1] == '\r')
-            --endPos;
+            --endPos; 
         *yylval = std::make_shared<rvar_t>(std::string(yytext + leftTrim, yytext + endPos));
     }
 }

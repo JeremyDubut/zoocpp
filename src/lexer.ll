@@ -2,7 +2,7 @@
     #include <iostream>
     #include "lexer.hpp"
     #include "parser.tab.hh"
-    #include "rsyntax.hpp"
+    #include "common.hpp"
     
     using namespace foo;
     
@@ -25,8 +25,9 @@
     using Token = Parser::token;
 %}
 
-"\n" { ++currentLine; }
+"\n" { ++currentLine; return Token::NL; }
 [[:space:]] ;
+"_" { return Token::HOLE; }
 "λ" { return Token::LAMBDA; }
 "\\" { return Token::LAMBDA; }
 "let" { return Token::LET; }
