@@ -32,6 +32,7 @@ struct value_t : std::enable_shared_from_this<value_t> {
     virtual term_ptr check_RABS(context_t&,std::string, raw_ptr);
     virtual inferrance_t infer_RAPP(context_t&,term_ptr,raw_ptr);
     std::string val_in_ctx(context_t&);
+    virtual raw_ptr display(context_t&);
 
 };
 std::ostream& operator<< (std::ostream&, value_t&);

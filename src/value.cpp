@@ -136,20 +136,30 @@ term_ptr value_t::check_RABS(context_t&,std::string, raw_ptr) {
     INFERFUN;
 }
 term_ptr vpi_t::check_RABS(context_t& cont,std::string var, raw_ptr r) {
+    // std::cout << "Checking inside lam " << var << " and " << *r << " of type " << *this << std::endl;
+    // std::cout << cont;
     cont.new_var(var,typ);
-    TCAPP(std::make_shared<vvar_t>(cont.level));
-    std::cout << "Checking inside lam " << *r << " of type " << *body.term << " evaluated to " << *val << std::endl;
-    return std::make_shared<abs_t>(var, r->check(cont,val));
+    // std::cout << cont;
+    TCAPP(std::make_shared<vvar_t>(cont.level-1));
+    term_ptr res = std::make_shared<abs_t>(var, r->check(cont,val));
+    cont.pop(var);
+    return res;
 }
 
-inferrance_t value_t::infer_RAPP(context_t& cont,term_ptr t,raw_ptr r) {
-    std::cout << "Inferring function type for " << *t << " and " << *r << std::endl;
-    std::cout << cont;
+inferrance_t value_t::infer_RAPP(context_t&,term_ptr,raw_ptr) {
     INFERFUN;
 }
 inferrance_t vpi_t::infer_RAPP(context_t& cont, term_ptr left, raw_ptr right) {
+    // std::cout << "Inferring function type for " << *left << " with type " << *this << std::endl;
+    // std::cout << " in env " << body.environment << std::endl;
     term_ptr rterm = right->check(cont, typ);
-    value_ptr rvalue = rterm->eval(body.environment);
+    // std::cout << "Evaluating right term of app " << *rterm << " in env " << body.environment << std::endl;
+    value_ptr rvalue = rterm->eval(cont.environment);
+    // std::cout << "Right term of app " << *rterm << " evaluated as " << *rvalue << std::endl;
     TCAPP(rvalue);
     return inferrance_t(std::make_shared<app_t>(left,rterm),val);
+}
+
+raw_ptr display(context_t&) {
+    throw "Display unknown value";
 }

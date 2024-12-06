@@ -53,8 +53,13 @@ int main(int argc, char* argv[])
         // std::cout << "Proposed type: " << *typ << std::endl;
 
         context_t ctx = context_t();
+        environment_t env = environment_t();
         // term_ptr inf = term->check(ctx,typ);
         inferrance_t inf = term->infer(ctx);
+        std::cout << "=================" << std::endl;
+        std::cout << "Inferred type: " << *inf.typ->quote(0) << std::endl;
+        std::cout << "Normal form: " << *inf.term->nf(ctx.environment) << std::endl;
+        // std::cout << ctx;
 
         // environment_t env;
 
