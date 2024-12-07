@@ -97,6 +97,7 @@ struct meta_t : term_t {
     meta_t(size_t index) : index {index} {}
     
     std::ostream& to_string(std::ostream&);
+    value_ptr eval(environment_t&);
 
 };
 
@@ -108,5 +109,6 @@ struct imeta_t : term_t {
     imeta_t() : index {metavar_t().id}, flags {flags_t()} {}
     
     std::ostream& to_string(std::ostream&);
+    value_ptr eval(environment_t&);
 
 };

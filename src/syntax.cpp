@@ -3,7 +3,8 @@
 #include "value.hpp"
 #include "rsyntax.hpp"
 
-
+#define VMETA(n) \
+    metavar_t::lookup(n).value_or(std::make_shared<vflex_t>(n))
 
 std::ostream& term_t::to_string(std::ostream& out) {return out << "Unknown term";}
 std::ostream& var_t::to_string(std::ostream& out) {return out << "Var" << index;}
@@ -30,7 +31,7 @@ value_ptr let_t::eval(environment_t& env) {
     return body->eval(env);
 }
 value_ptr app_t::eval(environment_t& env) {
-    return left->eval(env)->eval_in_abs(right->eval(env));
+    return left->eval(env)->vApp(right->eval(env));
     // return std::make_shared<vapp_t>(*left.eval(env),*right.eval(env));
 }
 value_ptr u_t::eval(environment_t&) {
@@ -38,6 +39,25 @@ value_ptr u_t::eval(environment_t&) {
 }
 value_ptr pi_t::eval(environment_t& env) {
     return std::make_shared<vpi_t>(var,typ->eval(env),env,body);
+}
+value_ptr meta_t::eval(environment_t&) {
+    return VMETA(index);
+}
+value_ptr imeta_t::eval(environment_t& env) {
+    if (env.size() != flags.size()) {
+        throw "Inconsistency between environments and flags.";
+    }
+    else {
+        auto ite = env.begin();
+        value_ptr res = VMETA(index);
+        for (auto itf : flags) {
+            if (itf) {
+                res = res->vApp(*ite);
+            }
+            ite++;
+        }
+        return res;
+    }
 }
 
 term_ptr term_t::nf(environment_t& env) {

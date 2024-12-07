@@ -45,13 +45,49 @@ std::ostream& operator<< (std::ostream& out, value_t& value) {
     return value.to_string(out);
 }
 
-value_ptr value_t::eval_in_abs(value_ptr v) {
-    return std::make_shared<vapp_t>(this->shared_from_this(),v);
+value_ptr value_t::vApp(value_ptr) {
+    std::stringstream ss("");
+    ss << "Trying to apply to a term that is not a lambda or a metavariable: " << *this;
+    throw ss.str();
 }
-value_ptr vabs_t::eval_in_abs(value_ptr v) {
+value_ptr vabs_t::vApp(value_ptr v) {
     TCAPP(v);
     return val;
 }
+value_ptr vflex_t::vApp(value_ptr v) {
+    spine_t spine_cp = spine;
+    spine_cp.push_back(v);
+    return std::make_shared<vflex_t>(index,spine_cp);
+}
+value_ptr vrig_t::vApp(value_ptr v) {
+    spine_t spine_cp = spine;
+    spine_cp.push_back(v);
+    return std::make_shared<vrig_t>(level,spine_cp);
+}
+
+value_ptr value_t::vAppSp(spine_t& spine) {
+    value_ptr res = shared_from_this();
+    for (auto it : spine) {
+        res = res->vApp(it);
+    }
+    return res;
+}
+
+// value_ptr value_t::vAppBDs(environment_t& env,flags_t& flags) {
+//     if (env.size() != flags.size()) {
+//         throw "Inconsistency between environments and flags.";
+//     }
+//     else {
+//         auto ite = env.begin();
+//         value_ptr res = shared_from_this();
+//         for (auto itf : flags) {
+//             if (itf) {
+//                 res = res->vApp(*ite);
+//             }
+//             ite++;
+//         }
+//     }
+// }
 
 term_ptr value_t::quote(std::size_t) {
     throw "Reification of an unknown value.";
