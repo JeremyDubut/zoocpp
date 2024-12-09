@@ -2,6 +2,7 @@
 #include "value.hpp"
 #include "rsyntax.hpp"
 #include "syntax.hpp"
+#include "metavar.hpp"
 
 #define CAPP(v,body,val) \
     body.environment.push_back(v); \
@@ -16,6 +17,15 @@
     std::stringstream ss(""); \
     ss << "Expected a function type and received type: " << *this; \
     throw ss.str();
+#define FUNSP(v,fun) \
+    term_ptr res = v; \
+    for (value_ptr it : spine) { \
+        term_ptr term = it->fun; \
+        res = std::make_shared<app_t>(res,term); \
+    } \
+    return res; 
+#define QUOTESP(v) FUNSP(v,quote(l))
+#define RENAMESP(v) FUNSP(v,rename(m,ren))
 
 
 std::ostream& value_t::to_string(std::ostream& out) {return out << "Unknown value";}
@@ -67,8 +77,8 @@ value_ptr vrig_t::vApp(value_ptr v) {
 
 value_ptr value_t::vAppSp(spine_t& spine) {
     value_ptr res = shared_from_this();
-    for (auto it : spine) {
-        res = res->vApp(it);
+    for (value_ptr it : spine) {
+        res = res->vApp(it->clone());
     }
     return res;
 }
@@ -108,6 +118,12 @@ term_ptr vu_t::quote(std::size_t) {
 term_ptr vpi_t::quote(std::size_t l) {
     VTCAPP;
     return std::make_shared<pi_t>(var,typ->quote(l),val->quote(l+1));
+}
+term_ptr vflex_t::quote(std::size_t l) {
+    QUOTESP(std::make_shared<meta_t>(index))
+}
+term_ptr vrig_t::quote(std::size_t l) {
+    QUOTESP(std::make_shared<var_t>(l-level-1))
 }
 
 bool value_t::conv_VU(std::size_t) {return false;}
@@ -199,4 +215,90 @@ inferrance_t vpi_t::infer_RAPP(context_t& cont, term_ptr left, raw_ptr right) {
     return inferrance_t(std::make_shared<app_t>(left,rterm),val);
 }
 
+
+value_ptr value_t::clone() {
+    return shared_from_this();
+}
+value_ptr vapp_t::clone() {
+    return std::make_shared<vapp_t>(left->clone(),right->clone());
+}
+value_ptr vpi_t::clone() {
+    return std::make_shared<vpi_t>(var,typ->clone(),body);
+}
+value_ptr vflex_t::clone() {
+    return std::make_shared<vflex_t>(index,spine);
+}
+value_ptr vrig_t::clone() {
+    return std::make_shared<vrig_t>(level,spine);
+}
+
+value_ptr value_t::force() {
+    return shared_from_this();
+}
+value_ptr vflex_t::force() {
+    metaentry_t entry = metavar_t::lookup(index);
+    if (entry.has_value()) {
+        return entry.value()->clone()->vAppSp(spine)->force();
+    }
+    return shared_from_this();
+}
+
+std::size_t value_t::inverse() {
+    throw "Unification error: non-variable in inverse";
+}
+std::size_t vrig_t::inverse() {
+    if (spine.empty()) {
+        return level;
+    }
+    throw "Unification error: variable with non-empty spine in inverse";
+}
+
+term_ptr value_t::rename(std::size_t,renaming_t&) {
+    throw "Renaming in unknown value";
+}
+term_ptr vu_t::rename(std::size_t,renaming_t&) {
+    return std::make_shared<u_t>();
+}
+term_ptr vabs_t::rename(std::size_t m,renaming_t& ren) {
+    std::size_t l = ren.cod;
+    VTCAPP;
+    ren.lift();
+    term_ptr res = val->rename(m,ren);
+    ren.pop();
+    return std::make_shared<abs_t>(var,res);
+}
+term_ptr vpi_t::rename(std::size_t m,renaming_t& ren) {
+    std::size_t l = ren.cod;
+    VTCAPP;
+    ren.lift();
+    term_ptr res = val->rename(m,ren);
+    ren.pop();
+    return std::make_shared<pi_t>(var,typ->rename(m,ren),res);
+}
+term_ptr vflex_t::rename(std::size_t m,renaming_t& ren) {
+    if (index == m) {
+        throw "Unification error: occurs check";
+    }
+    RENAMESP(std::make_shared<meta_t>(index));
+}
+term_ptr vrig_t::rename(std::size_t m,renaming_t& ren) {
+    if (ren.ren.contains(level)) {
+        RENAMESP(std::make_shared<var_t>(ren.dom-ren.ren[level]-1))
+    }
+    throw "Unification error: escaping variable";
+}
+
+void value_t::solve(std::size_t gamma, std::size_t m, spine_t& spine) {
+    renaming_t ren = renaming_t(gamma,spine);
+    term_ptr trhs = rename(m,ren);
+    environment_t env {};
+    for (std::size_t i = gamma; i >= 0; i--) {
+        std::stringstream ss("");
+        ss << "x" << i;
+        name_t name = ss.str();
+        trhs = std::make_shared<abs_t>(name,trhs);
+    }
+    value_ptr solution = trhs->eval(env);
+    metavar_t::lookupTable[m] = solution;
+}
 

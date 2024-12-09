@@ -26,7 +26,11 @@ struct value_t : std::enable_shared_from_this<value_t> {
     virtual inferrance_t infer_RAPP(context_t&,term_ptr,raw_ptr);
     name_t val_in_ctx(context_t&);
     value_ptr vAppSp(spine_t&);
-    // value_ptr vAppBDs(environment_t&,flags_t&);
+    virtual value_ptr clone();
+    virtual value_ptr force();
+    virtual std::size_t inverse();
+    virtual term_ptr rename(std::size_t,renaming_t&);
+    void solve(std::size_t,std::size_t,spine_t&);
 };
 std::ostream& operator<< (std::ostream&, value_t&);
 std::ostream& operator<< (std::ostream&, const environment_t&);
@@ -66,6 +70,7 @@ struct vabs_t : value_t {
     bool conv_VAPP(std::size_t, value_ptr, value_ptr);
     bool conv_VPI(std::size_t, value_ptr, closure_t&);
     bool conv(std::size_t, value_ptr);
+    term_ptr rename(std::size_t,renaming_t&);
 };
 
 struct vapp_t : value_t {
@@ -79,6 +84,7 @@ struct vapp_t : value_t {
     term_ptr quote(std::size_t);
     bool conv_VAPP(std::size_t, value_ptr, value_ptr);
     bool conv(std::size_t, value_ptr);
+    value_ptr clone();
 };
 
 struct vu_t : value_t {
@@ -88,6 +94,7 @@ struct vu_t : value_t {
     term_ptr quote(std::size_t);
     bool conv_VU(std::size_t);
     bool conv(std::size_t, value_ptr);
+    term_ptr rename(std::size_t,renaming_t&);
 };
 
 struct vpi_t : value_t {
@@ -110,6 +117,8 @@ struct vpi_t : value_t {
     bool conv(std::size_t, value_ptr);
     term_ptr check_RABS(context_t&,name_t, raw_ptr);
     inferrance_t infer_RAPP(context_t&,term_ptr,raw_ptr);
+    value_ptr clone();
+    term_ptr rename(std::size_t,renaming_t&);
 };
 
 struct vflex_t : value_t {
@@ -119,7 +128,11 @@ struct vflex_t : value_t {
     vflex_t(std::size_t index) : index {index}, spine {spine_t()} {}
     vflex_t(std::size_t index, spine_t& spine) : index {index}, spine {spine} {}
     std::ostream& to_string(std::ostream&);
+    term_ptr quote(std::size_t);
     value_ptr vApp(value_ptr);
+    value_ptr clone();
+    value_ptr force();
+    term_ptr rename(std::size_t,renaming_t&);
 };
 
 struct vrig_t : value_t {
@@ -129,5 +142,9 @@ struct vrig_t : value_t {
     vrig_t(std::size_t level) : level {level}, spine {spine_t()} {}
     vrig_t(std::size_t level, spine_t& spine) : level {level}, spine {spine} {}
     std::ostream& to_string(std::ostream&);
+    term_ptr quote(std::size_t);
     value_ptr vApp(value_ptr);
+    value_ptr clone();
+    std::size_t inverse();
+    term_ptr rename(std::size_t,renaming_t&);
 };

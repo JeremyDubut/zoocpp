@@ -13,3 +13,15 @@ struct metavar_t {
 
 
 };
+
+struct renaming_t {
+
+    std::size_t dom;
+    std::size_t cod;
+    renamingFun_t ren;
+
+    renaming_t() : dom {0}, cod {0}, ren {renamingFun_t()} {}
+    void lift();
+    void pop();
+    renaming_t(std::size_t,spine_t&);
+};

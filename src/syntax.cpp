@@ -4,7 +4,7 @@
 #include "rsyntax.hpp"
 
 #define VMETA(n) \
-    metavar_t::lookup(n).value_or(std::make_shared<vflex_t>(n))
+    metavar_t::lookup(n).value_or(std::make_shared<vflex_t>(n))->clone()
 
 std::ostream& term_t::to_string(std::ostream& out) {return out << "Unknown term";}
 std::ostream& var_t::to_string(std::ostream& out) {return out << "Var" << index;}
@@ -21,7 +21,7 @@ value_ptr term_t::eval(environment_t&) {
     throw "Evaluation of an unknown term.";
 }
 value_ptr var_t::eval(environment_t& env) {
-    return env.at(env.size()-1-index);
+    return env.at(env.size()-1-index)->clone();
 }
 value_ptr abs_t::eval(environment_t& env) {
     return std::make_shared<vabs_t>(var,env,body);
@@ -50,9 +50,9 @@ value_ptr imeta_t::eval(environment_t& env) {
     else {
         auto ite = env.begin();
         value_ptr res = VMETA(index);
-        for (auto itf : flags) {
+        for (bool itf : flags) {
             if (itf) {
-                res = res->vApp(*ite);
+                res = res->vApp((*ite)->clone());
             }
             ite++;
         }
