@@ -43,7 +43,7 @@ void context_t::new_val(name_t var, value_ptr t, value_ptr v) {
 }
 void context_t::pop(name_t var) {
     environment.pop_back();
-    level--;
+    level = level-1;
     types.erase(var);
     flags.pop_back();
 }
@@ -61,13 +61,13 @@ std::ostream& operator<< (std::ostream& out, context_t& cont) {
 }
 
 term_ptr raw_t::check(context_t& cont,value_ptr typ) {
-    std::cout << "Checking term " << *this << " with type " << *typ << std::endl;
+    // std::cout << "Checking term " << *this << " with type " << *typ << std::endl;
     inferrance_t inf = infer(cont);
     typ->unify(cont.level,inf.typ);
-    std::cout << "Type checking of term " << *this << " with type " << *typ << " successful, inferred as " << *inf.term << std::endl;
+    // std::cout << "Type checking of term " << *this << " with type " << *typ << " successful, inferred as " << *inf.term << std::endl;
     return inf.term;
     // if (typ->conv(cont.level,inf.typ)) {
-    //     // std::cout << "Type checking of term " << *this << " with type " << *typ << " successful, inferred as " << *inf.term << std::endl; 
+    //     // // std::cout << "Type checking of term " << *this << " with type " << *typ << " successful, inferred as " << *inf.term << std::endl; 
     //     return inf.term;
     // }
     // else {
@@ -79,13 +79,13 @@ term_ptr raw_t::check(context_t& cont,value_ptr typ) {
     // }
 }
 term_ptr rabs_t::check(context_t& cont,value_ptr v) {
-    std::cout << "Checking Lam " << *this << " with type " << *v << std::endl;
+    // std::cout << "Checking Lam " << *this << " with type " << *v << std::endl;
     term_ptr res = v->check_RABS(cont,var,body);
-    std::cout << "Type check of Lam " << *this << " with type " << *v << " successful, inferred as " << *res << std::endl;
+    // std::cout << "Type check of Lam " << *this << " with type " << *v << " successful, inferred as " << *res << std::endl;
     return res;
 }
 term_ptr rlet_t::check(context_t& cont,value_ptr v) {
-    std::cout << "Checking Let " << *typ << " with type " << *v << std::endl;
+    // std::cout << "Checking Let " << *typ << " with type " << *v << std::endl;
     term_ptr ta = typ->check(cont,VU);
     value_ptr va = ta->eval(cont.environment);
     term_ptr tt = def->check(cont,va);
@@ -94,13 +94,13 @@ term_ptr rlet_t::check(context_t& cont,value_ptr v) {
     term_ptr tu = body->check(cont,v);
     cont.pop(var);
     term_ptr res = std::make_shared<let_t>(var,ta,tt,tu);
-    std::cout << "Type check of Let " << *this << " with type " << *v << " successful, inferred as " << *res << std::endl;
+    // std::cout << "Type check of Let " << *this << " with type " << *v << " successful, inferred as " << *res << std::endl;
     return res;
 }
 term_ptr rhole_t::check(context_t& cont,value_ptr) {
-    std::cout << "Checking Hole" << std::endl;
+    // std::cout << "Checking Hole" << std::endl;
     term_ptr res = FRESHMETA;
-    std::cout << "Type check of hole done" << std::endl;
+    // std::cout << "Type check of hole done" << std::endl;
     return res;
 }
 
@@ -108,27 +108,27 @@ inferrance_t raw_t::infer(context_t&){
     throw "Inferring an unknown raw term.";
 }
 inferrance_t rabs_t::infer(context_t& cont){
-    std::cout << "Inferring Lam" << *this << std::endl;
+    // std::cout << "Inferring Lam" << *this << std::endl;
     value_ptr a = FRESHMETA->eval(cont.environment);
     cont.new_var(var,a);
     inferrance_t inf = body->infer(cont);
     cont.pop(var);
     closure_t clos = closure_t(cont.environment,inf.typ->quote(cont.level+1));
     inferrance_t res = inferrance_t(std::make_shared<abs_t>(var,inf.term),std::make_shared<vpi_t>(var,a,clos));
-    std::cout << "Inferrance of Lam" << *this << "successful, inferred as " << *res.term << " with type " << *res.typ << std::endl;
+    // std::cout << "Inferrance of Lam" << *this << "successful, inferred as " << *res.term << " with type " << *res.typ << std::endl;
     return res;
 }
 inferrance_t ru_t::infer(context_t&){
-    std::cout << "Inferring U" << std::endl;
-    std::cout << "Inferrance of U done" << std::endl;
+    // std::cout << "Inferring U" << std::endl;
+    // std::cout << "Inferrance of U done" << std::endl;
     return inferrance_t(std::make_shared<u_t>(), VU);
 }
 inferrance_t rvar_t::infer(context_t& cont){
     try {
-        std::cout << "Inferring variable " << name << std::endl;
+        // std::cout << "Inferring variable " << name << std::endl;
         auto res = cont.types.at(name);
         term_ptr term = std::make_shared<var_t>(cont.level-1-res.second);
-        std::cout << "Variable  " << name << " inferred as " << *term << " of typ " << *res.first << std::endl;
+        // std::cout << "Variable  " << name << " inferred as " << *term << " of typ " << *res.first << std::endl;
         return inferrance_t(term,res.first->clone());
     }
     catch (const std::out_of_range& e) {
@@ -136,24 +136,24 @@ inferrance_t rvar_t::infer(context_t& cont){
     }
 }
 inferrance_t rapp_t::infer(context_t& cont) {//TODO
-    std::cout << "Inferring app " << *this->left << " and " << *this->right << std::endl;
+    // std::cout << "Inferring app " << *this->left << " and " << *this->right << std::endl;
     inferrance_t inf = left->infer(cont);
     inferrance_t res = inf.typ->force()->infer_RAPP(cont,inf.term,right);
-    std::cout << "App " << *this << " inferred as " << *res.term << " of type " << *res.typ << std::endl;
+    // std::cout << "App " << *this << " inferred as " << *res.term << " of type " << *res.typ << std::endl;
     return res;
 }
 inferrance_t rpi_t::infer(context_t& cont) {
-    std::cout << "Inferring pi " << *this << std::endl;
+    // std::cout << "Inferring pi " << *this << std::endl;
     term_ptr ttyp = typ->check(cont,VU);
     cont.new_var(var,ttyp->eval(cont.environment));
     term_ptr tbody = body->check(cont,VU);
     cont.pop(var);
     term_ptr res = std::make_shared<pi_t>(var,ttyp,tbody);
-    std::cout << "Pi " << *this << " inferred as " << *res << " of type U" << std::endl;
+    // std::cout << "Pi " << *this << " inferred as " << *res << " of type U" << std::endl;
     return inferrance_t(res,VU);
 }
 inferrance_t rlet_t::infer(context_t& cont) {
-    std::cout << "Inferring let " << *this << std::endl;
+    // std::cout << "Inferring let " << *this << std::endl;
     term_ptr ttyp = typ->check(cont,VU);
     value_ptr vtyp = ttyp->eval(cont.environment);
     term_ptr tdef = def->check(cont,vtyp);
@@ -162,13 +162,13 @@ inferrance_t rlet_t::infer(context_t& cont) {
     inferrance_t inf = body->infer(cont);
     cont.pop(var);
     inferrance_t res = inferrance_t(std::make_shared<let_t>(var,ttyp,tdef,inf.term),inf.typ);
-    std::cout << "Let " << *this << " inferred as " << *res.term << " of type " << *res.typ << std::endl;
+    // std::cout << "Let " << *this << " inferred as " << *res.term << " of type " << *res.typ << std::endl;
     return res;
 }
 inferrance_t rhole_t::infer(context_t& cont) {
-    std::cout << "Inferring hole" << std::endl;
+    // std::cout << "Inferring hole" << std::endl;
     value_ptr a = FRESHMETA->eval(cont.environment);
-    std::cout << "Inferrance of hole successfule, inferred with type " << *a << std::endl;
+    // std::cout << "Inferrance of hole successfule, inferred with type " << *a << std::endl;
     return inferrance_t(FRESHMETA,a);
 }
 

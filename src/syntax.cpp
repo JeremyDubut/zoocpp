@@ -53,8 +53,9 @@ value_ptr imeta_t::eval(environment_t& env) {
     else {
         auto ite = env.begin();
         value_ptr res = VMETA(index);
-        std::cout << "Looking out " << index << " with " << *res << " and " << flags.size() << std::endl;
+        // std::cout << "Looking out " << index << " with " << *res << " and " << flags.size() << std::endl;
         for (bool itf : flags) {
+            // std::cout << itf << std::endl;
             if (itf) {
                 res = res->vApp((*ite)->clone());
             }

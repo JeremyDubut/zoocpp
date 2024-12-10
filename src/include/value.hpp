@@ -33,7 +33,7 @@ struct value_t : std::enable_shared_from_this<value_t> {
     void solve(std::size_t,std::size_t,spine_t&);
     virtual void unify(std::size_t,value_ptr);
     virtual void unify_ABS(std::size_t,closure_t&);
-    virtual void unify_U(std::size_t);
+    virtual void unify_U();
     virtual void unify_PI(std::size_t,name_t,value_ptr,closure_t&);
     virtual void unify_RIG(std::size_t,std::size_t,spine_t&);
     virtual void unify_FLEX(std::size_t,std::size_t,spine_t&);
@@ -106,7 +106,7 @@ struct vu_t : value_t {
     bool conv(std::size_t, value_ptr);
     term_ptr rename(std::size_t,renaming_t&);
     void unify(std::size_t,value_ptr);
-    void unify_U(std::size_t);
+    void unify_U();
 };
 
 struct vpi_t : value_t {
@@ -149,7 +149,7 @@ struct vflex_t : value_t {
     term_ptr rename(std::size_t,renaming_t&);
     void unify(std::size_t,value_ptr);
     void unify_FLEX(std::size_t,std::size_t,spine_t&);
-    void unify_U(std::size_t);
+    void unify_U();
     void unify_PI(std::size_t,name_t,value_ptr,closure_t&);
     void unify_RIG(std::size_t,std::size_t,spine_t&);
 };

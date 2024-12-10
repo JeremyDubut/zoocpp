@@ -1,5 +1,6 @@
 #include "metavar.hpp"
 #include <sstream>
+#include <iostream>
 #include "value.hpp"
 
 metadata_t metavar_t::lookupTable {};
@@ -39,4 +40,5 @@ renaming_t::renaming_t(std::size_t l, spine_t& spine) {
             throw "Unification error: several occurences of a variable in inverse";
         }
     }
+    // std::cout << "Fresh variable with " << dom << std::endl;
 }

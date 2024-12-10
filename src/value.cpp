@@ -217,10 +217,10 @@ term_ptr value_t::check_RABS(context_t& cont,name_t var, raw_ptr body) {
     return std::make_shared<abs_t>(var,inf.term);
 }
 term_ptr vpi_t::check_RABS(context_t& cont,name_t var, raw_ptr r) {
-    // std::cout << "Checking inside lam " << var << " and " << *r << " of type " << *this << std::endl;
-    // std::cout << cont;
+    // // std::cout << "Checking inside lam " << var << " and " << *r << " of type " << *this << std::endl;
+    // // std::cout << cont;
     cont.new_var(var,typ);
-    // std::cout << cont;
+    // // std::cout << cont;
     TCAPP(std::make_shared<vrig_t>(cont.level-1));
     term_ptr res = std::make_shared<abs_t>(var, r->check(cont,val));
     cont.pop(var);
@@ -243,12 +243,12 @@ inferrance_t value_t::infer_RAPP(context_t& cont,term_ptr left,raw_ptr right) {
 
 }
 inferrance_t vpi_t::infer_RAPP(context_t& cont, term_ptr left, raw_ptr right) {
-    // std::cout << "Inferring function type for " << *left << " with type " << *this << std::endl;
-    // std::cout << " in env " << body.environment << std::endl;
+    // // std::cout << "Inferring function type for " << *left << " with type " << *this << std::endl;
+    // // std::cout << " in env " << body.environment << std::endl;
     term_ptr rterm = right->check(cont, typ);
-    // std::cout << "Evaluating right term of app " << *rterm << " in env " << body.environment << std::endl;
+    // // std::cout << "Evaluating right term of app " << *rterm << " in env " << body.environment << std::endl;
     value_ptr rvalue = rterm->eval(cont.environment);
-    // std::cout << "Right term of app " << *rterm << " evaluated as " << *rvalue << std::endl;
+    // // std::cout << "Right term of app " << *rterm << " evaluated as " << *rvalue << std::endl;
     TCAPP(rvalue);
     return inferrance_t(std::make_shared<app_t>(left,rterm),val);
 }
@@ -336,7 +336,7 @@ void value_t::solve(std::size_t gamma, std::size_t index, spine_t& spine) {
     renaming_t ren = renaming_t(gamma,spine);
     term_ptr trhs = rename(index,ren);
     SOLVE(ren.dom)
-    std::cout << "Solved " << *this << " result: " << *solution << std::endl;
+    // std::cout << "Solved " << *this << " result: " << *solution << std::endl;
 }
 
 void value_t::unify(std::size_t,value_ptr) {
@@ -347,8 +347,8 @@ void value_t::unify(std::size_t,value_ptr) {
 void vabs_t::unify(std::size_t l,value_ptr v) {
     v->unify_ABS(l,body);
 }
-void vu_t::unify(std::size_t l,value_ptr v) {
-    v->unify_U(l);
+void vu_t::unify(std::size_t,value_ptr v) {
+    v->unify_U();
 }
 void vpi_t::unify(std::size_t l,value_ptr v) {
     v->unify_PI(l,var,typ,body);
@@ -361,29 +361,29 @@ void vflex_t::unify(std::size_t l,value_ptr v) {
 }
 
 void value_t::unify_ABS(std::size_t l ,closure_t& body) {
-    std::cout << "Unifying Lam " << body << " with term " << *this << std::endl;
+    // // std::cout << "Unifying Lam " << body << " with term " << *this << std::endl;
     VCAPP(body,val)
     val->unify(l+1,vApp(VARL));
-    std::cout << "Unification of Lam " << body << " with term " << *this << " successful" << std::endl;
+    // // std::cout << "Unification of Lam " << body << " with term " << *this << " successful" << std::endl;
 }
 void vabs_t::unify_ABS(std::size_t l ,closure_t& body1) {
-    std::cout << "Unifying Lam " << body << " with Lam " << *this << std::endl;
+    // // std::cout << "Unifying Lam " << body << " with Lam " << *this << std::endl;
     VCAPP(body1,val1)
     VTCAPP
     val1->unify(l+1,val);
-    std::cout << "Unification of Lam " << body << " with Lam " << *this << " successful" << std::endl;
+    // // std::cout << "Unification of Lam " << body << " with Lam " << *this << " successful" << std::endl;
 }
-void value_t::unify_U(std::size_t) {
+void value_t::unify_U() {
     std::stringstream ss("");
     ss << "Unification error: rigid mismatch between U and " << *this;
     throw ss.str();
 }
-void vu_t::unify_U(std::size_t) {}
-void vflex_t::unify_U(std::size_t l) {
-    std::cout << "Unifying U with flex " << *this << std::endl;
+void vu_t::unify_U() {}
+void vflex_t::unify_U() {
+    // // std::cout << "Unifying U with flex " << *this << std::endl;
     term_ptr trhs = std::make_shared<u_t>();
-    SOLVE(l)
-    std::cout << "Unification of U with flex " << *this << " successful with solution " << *solution << std::endl;
+    SOLVE(spine.size())
+    // // std::cout << "Unification of U with flex " << *this << " successful with solution " << *solution << std::endl;
 }
 void value_t::unify_PI(std::size_t,name_t,value_ptr,closure_t&) {
     std::stringstream ss("");
