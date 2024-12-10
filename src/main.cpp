@@ -40,14 +40,17 @@ int main(int argc, char* argv[])
 
         std::cout << "Parsed term: " << std::endl << *term << std::endl;
 
-        // context_t ctx = context_t();
-        // environment_t env = environment_t();
-        // inferrance_t inf = term->infer(ctx);
-        // std::cout << "=================" << std::endl;
-        // std::cout << "Inferred type: " << *inf.typ->quote(0)->display() << std::endl;
-        // std::cout << "Normal form: " << *inf.term->nf(ctx.environment) << std::endl;
+        context_t ctx = context_t();
+        environment_t env = environment_t();
+        inferrance_t inf = term->infer(ctx);
+        std::cout << "=================" << std::endl;
+        std::cout << "Inferred type: " << *inf.typ->quote(0)->display() << std::endl;
+        std::cout << "Normal form: " << *inf.term->nf(env) << std::endl;
 
         return res;
+    }
+    catch (char const* e) {
+        std::cout << "Error: " << e << std::endl;
     }
     catch (std::string e) {
         std::cout << "Error: " << e << std::endl;

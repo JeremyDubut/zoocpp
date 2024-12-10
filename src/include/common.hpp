@@ -24,3 +24,6 @@ typedef std::vector<bool> flags_t;
 typedef std::vector<value_ptr> spine_t;
 typedef std::unordered_map<std::size_t,std::size_t> renamingFun_t;
 
+
+#define FRESHMETA std::make_shared<imeta_t>(cont.flags)
+

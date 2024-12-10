@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include "syntax.hpp"
 #include "value.hpp"
 #include "rsyntax.hpp"
@@ -45,11 +46,14 @@ value_ptr meta_t::eval(environment_t&) {
 }
 value_ptr imeta_t::eval(environment_t& env) {
     if (env.size() != flags.size()) {
-        throw "Inconsistency between environments and flags.";
+        std::stringstream ss("");
+        ss << "Inconsistency between environments " << env << " and flags " << flags.size();
+        throw ss.str();
     }
     else {
         auto ite = env.begin();
         value_ptr res = VMETA(index);
+        std::cout << "Looking out " << index << " with " << *res << " and " << flags.size() << std::endl;
         for (bool itf : flags) {
             if (itf) {
                 res = res->vApp((*ite)->clone());

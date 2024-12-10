@@ -1,4 +1,5 @@
 #include <sstream>
+#include <iostream>
 #include "value.hpp"
 #include "rsyntax.hpp"
 #include "syntax.hpp"
@@ -9,7 +10,7 @@
     value_ptr val = body.term->eval(body.environment); \
     body.environment.pop_back(); 
 #define TCAPP(v) CAPP(v,this->body,val)
-#define VARL std::make_shared<vvar_t>(l)
+#define VARL std::make_shared<vrig_t>(l)
 #define VCAPP(body,val) CAPP(VARL,body,val)
 #define VTCAPP TCAPP(VARL)
 #define CONVVAPP(v) vapp_t(v,VARL).conv(l+1,val)
@@ -37,9 +38,9 @@
     }
 #define SOLVE(dom) \
     environment_t env {}; \
-    for (std::size_t i = dom; i >= 0; i--) { \
+    for (std::size_t i = 0; i < dom; i++) { \
         std::stringstream ss(""); \
-        ss << "x" << i; \
+        ss << "x" << dom-i; \
         name_t name = ss.str(); \
         trhs = std::make_shared<abs_t>(name,trhs); \
     } \
@@ -206,22 +207,40 @@ bool vvar_t::conv(std::size_t l, value_ptr v) {
     return v->conv_VVAR(l,level);
 } 
 
-term_ptr value_t::check_RABS(context_t&,name_t, raw_ptr) {
-    INFERFUN;
+term_ptr value_t::check_RABS(context_t& cont,name_t var, raw_ptr body) {
+    value_ptr a = FRESHMETA->eval(cont.environment);
+    cont.new_var(var,a);
+    inferrance_t inf = body->infer(cont);
+    cont.pop(var);
+    closure_t clos = closure_t(cont.environment,inf.typ->quote(cont.level+1));
+    unify(cont.level,std::make_shared<vpi_t>(var,a,clos));
+    return std::make_shared<abs_t>(var,inf.term);
 }
 term_ptr vpi_t::check_RABS(context_t& cont,name_t var, raw_ptr r) {
     // std::cout << "Checking inside lam " << var << " and " << *r << " of type " << *this << std::endl;
     // std::cout << cont;
     cont.new_var(var,typ);
     // std::cout << cont;
-    TCAPP(std::make_shared<vvar_t>(cont.level-1));
+    TCAPP(std::make_shared<vrig_t>(cont.level-1));
     term_ptr res = std::make_shared<abs_t>(var, r->check(cont,val));
     cont.pop(var);
     return res;
 }
 
-inferrance_t value_t::infer_RAPP(context_t&,term_ptr,raw_ptr) {
-    INFERFUN;
+inferrance_t value_t::infer_RAPP(context_t& cont,term_ptr left,raw_ptr right) {
+    value_ptr a = FRESHMETA->eval(cont.environment);
+    std::stringstream ss("");
+    ss << "x" << this;
+    name_t var = ss.str();
+    cont.new_var(var,a);
+    closure_t body = closure_t(cont.environment,FRESHMETA);
+    cont.pop(var);
+    unify(cont.level,std::make_shared<vpi_t>(var,a,body));
+    term_ptr rterm = right->check(cont, a);
+    value_ptr rvalue = rterm->eval(cont.environment);
+    CAPP(rvalue,body,val)
+    return inferrance_t(std::make_shared<app_t>(left,rterm),val);
+
 }
 inferrance_t vpi_t::infer_RAPP(context_t& cont, term_ptr left, raw_ptr right) {
     // std::cout << "Inferring function type for " << *left << " with type " << *this << std::endl;
@@ -263,7 +282,9 @@ value_ptr vflex_t::force() {
 }
 
 std::size_t value_t::inverse() {
-    throw "Unification error: non-variable in inverse";
+    std::stringstream ss("");
+    ss << "Unification error: non-variable in inverse " << *this;
+    throw ss.str();
 }
 std::size_t vrig_t::inverse() {
     if (spine.empty()) {
@@ -304,17 +325,24 @@ term_ptr vrig_t::rename(std::size_t m,renaming_t& ren) {
     if (ren.ren.contains(level)) {
         RENAMESP(std::make_shared<var_t>(ren.dom-ren.ren[level]-1),m,spine)
     }
-    throw "Unification error: escaping variable";
+    else {
+        std::stringstream ss("");
+        ss << "Unification error: escaping RIGID " << *this;
+        throw ss.str();
+    }
 }
 
 void value_t::solve(std::size_t gamma, std::size_t index, spine_t& spine) {
     renaming_t ren = renaming_t(gamma,spine);
     term_ptr trhs = rename(index,ren);
     SOLVE(ren.dom)
+    std::cout << "Solved " << *this << " result: " << *solution << std::endl;
 }
 
 void value_t::unify(std::size_t,value_ptr) {
-    throw "Unifying an unknown value";
+    std::stringstream ss("");
+    ss << "Unifying an unknown value " << *this;
+    throw ss.str();
 }
 void vabs_t::unify(std::size_t l,value_ptr v) {
     v->unify_ABS(l,body);
@@ -333,24 +361,34 @@ void vflex_t::unify(std::size_t l,value_ptr v) {
 }
 
 void value_t::unify_ABS(std::size_t l ,closure_t& body) {
+    std::cout << "Unifying Lam " << body << " with term " << *this << std::endl;
     VCAPP(body,val)
     val->unify(l+1,vApp(VARL));
+    std::cout << "Unification of Lam " << body << " with term " << *this << " successful" << std::endl;
 }
 void vabs_t::unify_ABS(std::size_t l ,closure_t& body1) {
+    std::cout << "Unifying Lam " << body << " with Lam " << *this << std::endl;
     VCAPP(body1,val1)
     VTCAPP
     val1->unify(l+1,val);
+    std::cout << "Unification of Lam " << body << " with Lam " << *this << " successful" << std::endl;
 }
 void value_t::unify_U(std::size_t) {
-    throw "Unification error: rigid mismatch";
+    std::stringstream ss("");
+    ss << "Unification error: rigid mismatch between U and " << *this;
+    throw ss.str();
 }
 void vu_t::unify_U(std::size_t) {}
 void vflex_t::unify_U(std::size_t l) {
+    std::cout << "Unifying U with flex " << *this << std::endl;
     term_ptr trhs = std::make_shared<u_t>();
     SOLVE(l)
+    std::cout << "Unification of U with flex " << *this << " successful with solution " << *solution << std::endl;
 }
 void value_t::unify_PI(std::size_t,name_t,value_ptr,closure_t&) {
-    throw "Unification error: rigid mismatch";
+    std::stringstream ss("");
+    ss << "Unification error: rigid mismatch between Pi and " << *this;
+    throw ss.str();
 }
 void vpi_t::unify_PI(std::size_t l,name_t,value_ptr typ1,closure_t& body1) {
     typ1->unify(l,typ);
@@ -369,14 +407,18 @@ void vflex_t::unify_PI(std::size_t level, name_t var, value_ptr typ,closure_t& b
     SOLVE(ren.dom)
 }
 void value_t::unify_RIG(std::size_t, std::size_t, spine_t&) {
-    throw "Unification error: rigid mismatch";
+    std::stringstream ss("");
+    ss << "Unification error: rigid mismatch between VRIGID and " << *this;
+    throw ss.str();
 }
 void vrig_t::unify_RIG(std::size_t l, std::size_t m, spine_t& spine1) {
     if (m == level) {
         UNIFYSP
     }
     else {
-        throw "Unification error: rigid mismatch";
+        std::stringstream ss("");
+        ss << "Unification error: rigid mismatch between VRIGID and VRIGID " << *this;
+        throw ss.str();
     }
 }
 void vabs_t::unify_RIG(std::size_t l, std::size_t m, spine_t& spine) {
@@ -390,7 +432,15 @@ void vflex_t::unify_RIG(std::size_t l, std::size_t level, spine_t& spine1) {
         RENAMESP_NORET(std::make_shared<var_t>(ren.dom-ren.ren[level]-1),index,spine1)
         SOLVE(ren.dom)
     }
-    throw "Unification error: escaping variable";
+    else {
+        std::stringstream ss("");
+        ss << "Unification error: escaping FLEX ?" << level << " " << ren.ren[level] << std::endl;
+        ss << "Renaming:" << std::endl;
+        for (auto it : ren.ren) {
+            ss << "\t" << it.first << " => " << it.second << std::endl;
+        }
+        throw ss.str();
+    }
 
 }
 void value_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine) {

@@ -5,9 +5,10 @@ struct context_t {
 
     environment_t environment;
     types_t types;
+    flags_t flags;
     std::size_t level; 
 
-    context_t() : environment {environment_t()}, types {types_t()}, level {0} {}
+    context_t() : environment {environment_t()}, types {types_t()}, flags {flags_t()}, level {0} {}
     void new_var(name_t, value_ptr);
     void new_val(name_t, value_ptr, value_ptr);
     void pop(name_t);
@@ -109,7 +110,8 @@ struct rhole_t : raw_t {
 
     rhole_t() {}
     std::ostream& to_string(std::ostream&);
-
+    term_ptr check(context_t&,value_ptr);
+    inferrance_t infer(context_t&);
 };
 
 struct rnl_t : raw_t {

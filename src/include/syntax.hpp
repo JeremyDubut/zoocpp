@@ -106,7 +106,7 @@ struct imeta_t : term_t {
     std::size_t index;
     flags_t flags;
 
-    imeta_t() : index {metavar_t().id}, flags {flags_t()} {}
+    imeta_t(flags_t& flags) : index {metavar_t().id}, flags {flags} {}
     
     std::ostream& to_string(std::ostream&);
     value_ptr eval(environment_t&);
