@@ -31,6 +31,12 @@ struct value_t : std::enable_shared_from_this<value_t> {
     virtual std::size_t inverse();
     virtual term_ptr rename(std::size_t,renaming_t&);
     void solve(std::size_t,std::size_t,spine_t&);
+    virtual void unify(std::size_t,value_ptr);
+    virtual void unify_ABS(std::size_t,closure_t&);
+    virtual void unify_U(std::size_t);
+    virtual void unify_PI(std::size_t,name_t,value_ptr,closure_t&);
+    virtual void unify_RIG(std::size_t,std::size_t,spine_t&);
+    virtual void unify_FLEX(std::size_t,std::size_t,spine_t&);
 };
 std::ostream& operator<< (std::ostream&, value_t&);
 std::ostream& operator<< (std::ostream&, const environment_t&);
@@ -71,6 +77,10 @@ struct vabs_t : value_t {
     bool conv_VPI(std::size_t, value_ptr, closure_t&);
     bool conv(std::size_t, value_ptr);
     term_ptr rename(std::size_t,renaming_t&);
+    void unify(std::size_t,value_ptr);
+    void unify_ABS(std::size_t,closure_t&);
+    void unify_RIG(std::size_t,std::size_t,spine_t&);
+    void unify_FLEX(std::size_t,std::size_t,spine_t&);
 };
 
 struct vapp_t : value_t {
@@ -95,6 +105,8 @@ struct vu_t : value_t {
     bool conv_VU(std::size_t);
     bool conv(std::size_t, value_ptr);
     term_ptr rename(std::size_t,renaming_t&);
+    void unify(std::size_t,value_ptr);
+    void unify_U(std::size_t);
 };
 
 struct vpi_t : value_t {
@@ -119,6 +131,8 @@ struct vpi_t : value_t {
     inferrance_t infer_RAPP(context_t&,term_ptr,raw_ptr);
     value_ptr clone();
     term_ptr rename(std::size_t,renaming_t&);
+    void unify(std::size_t,value_ptr);
+    void unify_PI(std::size_t,name_t,value_ptr,closure_t&);
 };
 
 struct vflex_t : value_t {
@@ -133,6 +147,11 @@ struct vflex_t : value_t {
     value_ptr clone();
     value_ptr force();
     term_ptr rename(std::size_t,renaming_t&);
+    void unify(std::size_t,value_ptr);
+    void unify_FLEX(std::size_t,std::size_t,spine_t&);
+    void unify_U(std::size_t);
+    void unify_PI(std::size_t,name_t,value_ptr,closure_t&);
+    void unify_RIG(std::size_t,std::size_t,spine_t&);
 };
 
 struct vrig_t : value_t {
@@ -147,4 +166,6 @@ struct vrig_t : value_t {
     value_ptr clone();
     std::size_t inverse();
     term_ptr rename(std::size_t,renaming_t&);
+    void unify(std::size_t,value_ptr);
+    void unify_RIG(std::size_t,std::size_t,spine_t&);
 };

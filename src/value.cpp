@@ -17,15 +17,34 @@
     std::stringstream ss(""); \
     ss << "Expected a function type and received type: " << *this; \
     throw ss.str();
-#define FUNSP(v,fun) \
-    term_ptr res = v; \
+#define FUNSP(v,fun,spine) \
+    term_ptr trhs = v; \
     for (value_ptr it : spine) { \
-        term_ptr term = it->fun; \
-        res = std::make_shared<app_t>(res,term); \
+        term_ptr term = it->clone()->fun; \
+        trhs = std::make_shared<app_t>(trhs,term); \
+    } 
+#define QUOTESP(v) \
+    FUNSP(v,quote(l),spine)\
+    return trhs; 
+#define RENAMESP_NORET(v,m,spine) FUNSP(v,rename(m,ren),spine)
+#define RENAMESP(v,m,spine) \
+    RENAMESP_NORET(v,m,spine) \
+    return trhs;
+#define UNIFYSP \
+    auto it1 = spine1.begin(); \
+    for (value_ptr it : spine) { \
+        (*it1)->clone()->unify(l,it->clone()); \
+    }
+#define SOLVE(dom) \
+    environment_t env {}; \
+    for (std::size_t i = dom; i >= 0; i--) { \
+        std::stringstream ss(""); \
+        ss << "x" << i; \
+        name_t name = ss.str(); \
+        trhs = std::make_shared<abs_t>(name,trhs); \
     } \
-    return res; 
-#define QUOTESP(v) FUNSP(v,quote(l))
-#define RENAMESP(v) FUNSP(v,rename(m,ren))
+    value_ptr solution = trhs->eval(env); \
+    metavar_t::lookupTable[index] = solution; \
 
 
 std::ostream& value_t::to_string(std::ostream& out) {return out << "Unknown value";}
@@ -279,26 +298,114 @@ term_ptr vflex_t::rename(std::size_t m,renaming_t& ren) {
     if (index == m) {
         throw "Unification error: occurs check";
     }
-    RENAMESP(std::make_shared<meta_t>(index));
+    RENAMESP(std::make_shared<meta_t>(index),m,spine);
 }
 term_ptr vrig_t::rename(std::size_t m,renaming_t& ren) {
     if (ren.ren.contains(level)) {
-        RENAMESP(std::make_shared<var_t>(ren.dom-ren.ren[level]-1))
+        RENAMESP(std::make_shared<var_t>(ren.dom-ren.ren[level]-1),m,spine)
     }
     throw "Unification error: escaping variable";
 }
 
-void value_t::solve(std::size_t gamma, std::size_t m, spine_t& spine) {
+void value_t::solve(std::size_t gamma, std::size_t index, spine_t& spine) {
     renaming_t ren = renaming_t(gamma,spine);
-    term_ptr trhs = rename(m,ren);
-    environment_t env {};
-    for (std::size_t i = gamma; i >= 0; i--) {
-        std::stringstream ss("");
-        ss << "x" << i;
-        name_t name = ss.str();
-        trhs = std::make_shared<abs_t>(name,trhs);
-    }
-    value_ptr solution = trhs->eval(env);
-    metavar_t::lookupTable[m] = solution;
+    term_ptr trhs = rename(index,ren);
+    SOLVE(ren.dom)
 }
 
+void value_t::unify(std::size_t,value_ptr) {
+    throw "Unifying an unknown value";
+}
+void vabs_t::unify(std::size_t l,value_ptr v) {
+    v->unify_ABS(l,body);
+}
+void vu_t::unify(std::size_t l,value_ptr v) {
+    v->unify_U(l);
+}
+void vpi_t::unify(std::size_t l,value_ptr v) {
+    v->unify_PI(l,var,typ,body);
+}
+void vrig_t::unify(std::size_t l,value_ptr v) {
+    v->unify_RIG(l,level,spine);
+}
+void vflex_t::unify(std::size_t l,value_ptr v) {
+    v->unify_FLEX(l,index,spine);
+}
+
+void value_t::unify_ABS(std::size_t l ,closure_t& body) {
+    VCAPP(body,val)
+    val->unify(l+1,vApp(VARL));
+}
+void vabs_t::unify_ABS(std::size_t l ,closure_t& body1) {
+    VCAPP(body1,val1)
+    VTCAPP
+    val1->unify(l+1,val);
+}
+void value_t::unify_U(std::size_t) {
+    throw "Unification error: rigid mismatch";
+}
+void vu_t::unify_U(std::size_t) {}
+void vflex_t::unify_U(std::size_t l) {
+    term_ptr trhs = std::make_shared<u_t>();
+    SOLVE(l)
+}
+void value_t::unify_PI(std::size_t,name_t,value_ptr,closure_t&) {
+    throw "Unification error: rigid mismatch";
+}
+void vpi_t::unify_PI(std::size_t l,name_t,value_ptr typ1,closure_t& body1) {
+    typ1->unify(l,typ);
+    VCAPP(body1,val1)
+    VTCAPP
+    val1->unify(l+1,val);
+}
+void vflex_t::unify_PI(std::size_t level, name_t var, value_ptr typ,closure_t& body) {
+    renaming_t ren = renaming_t(level,spine);
+    std::size_t l = ren.cod;
+    VCAPP(body,val);
+    ren.lift();
+    term_ptr res = val->rename(index,ren);
+    ren.pop();
+    term_ptr trhs = std::make_shared<pi_t>(var,typ->rename(index,ren),res);
+    SOLVE(ren.dom)
+}
+void value_t::unify_RIG(std::size_t, std::size_t, spine_t&) {
+    throw "Unification error: rigid mismatch";
+}
+void vrig_t::unify_RIG(std::size_t l, std::size_t m, spine_t& spine1) {
+    if (m == level) {
+        UNIFYSP
+    }
+    else {
+        throw "Unification error: rigid mismatch";
+    }
+}
+void vabs_t::unify_RIG(std::size_t l, std::size_t m, spine_t& spine) {
+    VTCAPP
+    spine.push_back(VARL);
+    val->unify_RIG(l+1,m,spine);
+}
+void vflex_t::unify_RIG(std::size_t l, std::size_t level, spine_t& spine1) {
+    renaming_t ren = renaming_t(l,spine);
+    if (ren.ren.contains(level)) {
+        RENAMESP_NORET(std::make_shared<var_t>(ren.dom-ren.ren[level]-1),index,spine1)
+        SOLVE(ren.dom)
+    }
+    throw "Unification error: escaping variable";
+
+}
+void value_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine) {
+    solve(l,m,spine);
+}
+void vflex_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine1) {
+    if (m == index) {
+        UNIFYSP
+    }
+    else {
+        solve(l,m,spine1);
+    }
+}
+void vabs_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine) {
+    VTCAPP
+    spine.push_back(VARL);
+    val->unify_FLEX(l+1,m,spine);
+}
