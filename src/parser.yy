@@ -43,17 +43,18 @@
 }
 
 %token NL
-%token LET IN COLON EQ TO DOT U 
-%token HOLE
+%token LET IN EQ DOT
 %token LAMBDA
-%token VAR
+%token VAR HOLE U
 %token EF
-%token APP
+%token TO COLON 
 %token LPAR RPAR
+%token APP
 
-%nonassoc LAMBDA DOT U HOLE NL
-%nonassoc VAR LPAR
-%right TO
+%nonassoc LAMBDA DOT U NL
+%nonassoc VAR HOLE
+%right TO 
+%nonassoc LPAR
 %nonassoc APP
 
 %expect 0

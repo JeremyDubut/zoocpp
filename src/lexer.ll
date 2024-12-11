@@ -39,6 +39,7 @@
 "." { return Token::DOT; }
 "U" { return Token::U; }
 "in" { return Token::IN; }
+";" { return Token::IN; }
 "(" { return Token::LPAR; }
 ")" { return Token::RPAR; }
 [[:alnum:]]+ { copyValue(); return Token::VAR; }

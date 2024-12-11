@@ -6,7 +6,8 @@
 
 #define BIND_CONTEXT(v,b) \
     environment.push_back(v); \
-    types[var] = std::pair<value_ptr,std::size_t>(t,level); \
+    types.try_emplace(var,std::vector<std::pair<value_ptr,std::size_t>>()); \
+    types[var].push_back(std::pair<value_ptr,std::size_t>(t,level)); \
     flags.push_back(b); \
     level++;
 #define VU std::make_shared<vu_t>()
@@ -44,7 +45,10 @@ void context_t::new_val(name_t var, value_ptr t, value_ptr v) {
 void context_t::pop(name_t var) {
     environment.pop_back();
     level = level-1;
-    types.erase(var);
+    types[var].pop_back();
+    if (types[var].empty()) {
+        types.erase(var);
+    }
     flags.pop_back();
 }
 
@@ -53,10 +57,10 @@ std::ostream& operator<< (std::ostream& out, context_t& cont) {
     out << "- Environment" << std::endl;
     out << cont.environment << std::endl;
     out << "- Level: " << cont.level << std::endl;
-    out << "- Types" << std::endl;
-    for (auto it = cont.types.begin(); it != cont.types.end(); it++) {
-        out << it->first << " " << *((it->second).first) << " " << (it->second).second << std::endl;
-    }
+    // out << "- Types" << std::endl; TODO
+    // for (auto it = cont.types.begin(); it != cont.types.end(); it++) {
+    //     out << it->first << " " << *((it->second).first) << " " << (it->second).second << std::endl;
+    // }
     return out;
 }
 
@@ -126,7 +130,7 @@ inferrance_t ru_t::infer(context_t&){
 inferrance_t rvar_t::infer(context_t& cont){
     try {
         // std::cout << "Inferring variable " << name << std::endl;
-        auto res = cont.types.at(name);
+        auto res = *(cont.types.at(name).end()-1);
         term_ptr term = std::make_shared<var_t>(cont.level-1-res.second);
         // std::cout << "Variable  " << name << " inferred as " << *term << " of typ " << *res.first << std::endl;
         return inferrance_t(term,res.first->clone());

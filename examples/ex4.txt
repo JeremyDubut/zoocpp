@@ -2,9 +2,9 @@ let id : (A : _) -> A -> A = \A x. x in
 
 let List : U -> U = \A. (L : _) -> (A -> L -> L) -> L -> L in
 
-let nil : (A : _) -> (List A) = \A L c n. n in
+let nil : (A : _) -> (List A) = \A L cons nil. nil in
 
-let cons : (A : _) -> A -> (List A) -> (List A) = \A x xs L c n. c x (xs _ c n) in
+let cons : (A : _) -> A -> (List A) -> (List A) = \A x xs L cons nil. cons x (xs _ cons nil) in
 
 let Bool : U = (B : _) -> B -> B -> B in
 
