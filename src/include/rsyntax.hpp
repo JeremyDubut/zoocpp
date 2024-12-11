@@ -50,6 +50,20 @@ struct rabs_t : raw_t {
     term_ptr check(context_t&,value_ptr);
     inferrance_t infer(context_t&);
 };
+struct riabs_t : rabs_t {
+
+    riabs_t(name_t var, raw_ptr body) : rabs_t(var,body) {}
+
+    std::ostream& to_string(std::ostream&);
+};
+struct rnabs_t : rabs_t {
+
+    name_t ivar;
+
+    rnabs_t(name_t var, raw_ptr body, name_t ivar) : rabs_t(var,body), ivar {ivar} {}
+
+    std::ostream& to_string(std::ostream&);
+};
 
 struct rapp_t : raw_t {
     raw_ptr left;
@@ -59,6 +73,20 @@ struct rapp_t : raw_t {
 
     std::ostream& to_string(std::ostream&);
     inferrance_t infer(context_t&);
+};
+struct riapp_t : rapp_t {
+
+    riapp_t(raw_ptr left,raw_ptr right) : rapp_t(left,right) {}
+
+    std::ostream& to_string(std::ostream&);
+};
+struct rnapp_t : rapp_t {
+
+    name_t ivar;
+
+    rnapp_t(raw_ptr left,raw_ptr right, name_t ivar) : rapp_t(left,right), ivar {ivar} {}
+
+    std::ostream& to_string(std::ostream&);
 };
 
 struct rlet_t : raw_t {
@@ -104,6 +132,12 @@ struct rpi_t : raw_t {
 
     std::ostream& to_string(std::ostream&);
     inferrance_t infer(context_t&);
+};
+struct ripi_t : rpi_t {
+
+    ripi_t(name_t var, raw_ptr typ, raw_ptr body) : rpi_t(var,typ,body) {}
+
+    std::ostream& to_string(std::ostream&);
 };
 
 struct rhole_t : raw_t {

@@ -18,12 +18,17 @@ std::ostream& operator<< (std::ostream& out, raw_t& term) {return term.to_string
 std::ostream& raw_t::to_string(std::ostream& out) {return out << "Unknown raw term";}
 std::ostream& rvar_t::to_string(std::ostream& out) {return out << name;}
 std::ostream& rabs_t::to_string(std::ostream& out) {return out << "λ" << var << " " << *body;}
+std::ostream& riabs_t::to_string(std::ostream& out) {return out << "λ{" << var << "} " << *body;}
+std::ostream& rnabs_t::to_string(std::ostream& out) {return out << "λ{" << var << "=" << ivar << "} " << *body;}
 std::ostream& rapp_t::to_string(std::ostream& out) {return out << "(" << *left << " " << *right << ")";}
+std::ostream& riapp_t::to_string(std::ostream& out) {return out << "(" << *left << " {" << *right << "})";}
+std::ostream& rnapp_t::to_string(std::ostream& out) {return out << "(" << *left << " {" << ivar << "=" << *right << "})";}
 std::ostream& rlet_t::to_string(std::ostream& out) {
     return out << "Let " << var << " : " << *typ << " = " << *def << " in" << std::endl << *body;
 }
 std::ostream& ru_t::to_string(std::ostream& out) {return out << "𝒰";}
 std::ostream& rpi_t::to_string(std::ostream& out) {return out << "(" << var << " : " << *typ << ") → " << *body;}
+std::ostream& ripi_t::to_string(std::ostream& out) {return out << "{" << var << " : " << *typ << "} → " << *body;}
 std::ostream& rhole_t::to_string(std::ostream& out) {return out << "?_";}
 std::ostream& rnl_t::to_string(std::ostream& out) {return out << std::endl << *body;}
 

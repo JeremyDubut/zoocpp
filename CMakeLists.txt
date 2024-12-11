@@ -22,7 +22,7 @@ set(BISON_HEADER ${CMAKE_BINARY_DIR}/parser.tab.hh)
 
 # Generate the lexer and parser
 FLEX_TARGET(Lexer src/lexer.ll ${FLEX_OUTPUT})
-BISON_TARGET(Parser src/parser.yy ${BISON_OUTPUT} COMPILE_FLAGS "-Wcounterexamples --defines=${BISON_HEADER}")
+BISON_TARGET(Parser src/parser.yy ${BISON_OUTPUT} COMPILE_FLAGS "-v -Wcounterexamples --defines=${BISON_HEADER}")
 
 # Add generated files to the project
 # ADD_FLEX_BISON_DEPENDENCY(Lexer Parser)

@@ -42,5 +42,7 @@
 ";" { return Token::IN; }
 "(" { return Token::LPAR; }
 ")" { return Token::RPAR; }
+"{" { return Token::LBRA; }
+"}" { return Token::RBRA; }
 [[:alnum:]]+ { copyValue(); return Token::VAR; }
 <<EOF>> { return Token::YYEOF; }
