@@ -38,8 +38,9 @@ raw_ptr rabs_t::update_body(raw_ptr body) {
     return shared_from_this();
 }
 
-name_t raw_t::get_name() {return "Unknown name";}
-name_t rvar_t::get_name() {return name;}
+name_t raw_t::get_name() const {return "Unknown name";}
+name_t rvar_t::get_name() const {return name;}
+name_t rhole_t::get_name() const {return "_";}
 
 void context_t::new_var(name_t var, value_ptr t) {
     BIND_CONTEXT(std::make_shared<vrig_t>(level),true);
@@ -181,3 +182,123 @@ inferrance_t rhole_t::infer(context_t& cont) {
     return inferrance_t(FRESHMETA,a);
 }
 
+
+raw_ptr raw_t::build(raw_ptr) {throw "Cannot build an non-utility raw type";}
+raw_ptr iicit::build(raw_ptr r) {return std::make_shared<riabs_t>(bind,r);}
+raw_ptr eicit::build(raw_ptr r) {return std::make_shared<rabs_t>(bind,r);}
+raw_ptr nicit::build(raw_ptr r) {return std::make_shared<rnabs_t>(bind,r,name);}
+raw_ptr iarg_t::build(raw_ptr r) {return std::make_shared<riapp_t>(r,arg);}
+raw_ptr earg_t::build(raw_ptr r) {return std::make_shared<rapp_t>(r,arg);}
+raw_ptr narg_t::build(raw_ptr r) {return std::make_shared<rnapp_t>(r,arg,name);}
+#define BUILDPI(t) \
+    while (!names.empty()) { \
+        name_t var = *(names.end()-1); \
+        names.pop_back(); \
+        res = std::make_shared<t>(var,typ,res); \
+    } 
+raw_ptr pibinder_t::build(raw_ptr r) {
+    raw_ptr res = r;
+    if (icit) {
+        BUILDPI(ripi_t);
+    }
+    else {
+        BUILDPI(rpi_t);
+    }
+    return res;
+}
+raw_ptr pibinderlist_t::build(raw_ptr r) {
+    raw_ptr res = r;
+    while (!binders.empty()) {
+        raw_ptr bind = *(binders.end()-1);
+        binders.pop_back();
+        res = bind->build(res);
+    }
+    return res;
+}
+raw_ptr icitlist_t::build(raw_ptr r) {
+    raw_ptr res = r;
+    while (!icits.empty()) {
+        raw_ptr icit = *(icits.end()-1);
+        icits.pop_back();
+        res = icit->build(res);
+    }
+    return res;
+}
+raw_ptr arglist_t::build(raw_ptr r) {
+    raw_ptr res = r;
+    for (raw_ptr arg : args) {
+        res = arg->build(res);
+    }
+    return res;
+}
+raw_ptr raw_t::auto_build() {throw "Cannot auto build a non-list of arguments";}
+raw_ptr arglist_t::auto_build() {
+    raw_ptr res = args[0];
+    for (auto it = args.begin()+1; it!=args.end(); it++) {
+        res = (*it)->build(res);
+    }
+    return res;
+}
+void raw_t::push_back(raw_ptr) {throw "Cannot push_back on a non-list type";}
+void pibinderlist_t::push_back(raw_ptr r) {binders.push_back(r);}
+void arglist_t::push_back(raw_ptr r) {args.push_back(r);}
+void icitlist_t::push_back(raw_ptr r) {icits.push_back(r);}
+std::vector<name_t>* raw_t::get_namelist() { throw "Not a name list"; }
+std::vector<name_t>* namelist_t::get_namelist() { return names; }
+// std::vector<name_t> raw_t::get_names() const { throw "Not a binder"; }
+// std::vector<raw_ptr>* raw_t::get_binderlist() const { throw "Not a binder list"; }
+// raw_ptr raw_t::build_icit(raw_ptr) const { throw "Not an icit"; }
+// std::vector<raw_ptr>* raw_t::get_icitlist() const { throw "Not a icit list"; }
+// arg_t raw_t::build_arg(raw_ptr) const { throw "Not an arg"; }
+// raw_ptr raw_t::build_pi(raw_ptr) const { throw "Not an arg"; }
+// std::vector<raw_ptr>* raw_t::get_arglist() const { throw "Not an arg list"; }
+// std::vector<name_t> pibinder_t::get_names() const {return names;}
+// raw_ptr pibinder_t::build_pi(raw_ptr r){
+//     raw_ptr res = r;
+//     while (!names.empty()) {
+//         name_t var = names.end()-1;
+//     }
+// }
+
+// raw_ptr pifoldr(std::vector<raw_ptr>* v, raw_ptr r) {
+//     if (v->empty()) {
+//         return r;
+//     }
+//     raw_ptr pb = *(v->end()-1);
+//     std::vector<name_t> names = pb->get_names();
+//     v->pop_back();
+//     raw_ptr res = pifoldr(v,r);
+//     res = pb.build_pi(res);
+//     while (!names.empty()) {
+//         name_t var = *(names.end()-1);
+//         names.pop_back();
+//         if (pb.icit) {
+//             res = std::make_shared<ripi_t>(var,pb.typ,res);
+//         }
+//         else {
+//             res = std::make_shared<rpi_t>(var,pb.typ,res);
+//         }
+//     }
+//     return res;
+// }
+// raw_ptr lamfoldr(std::vector<icit>* v, raw_ptr r) {
+//     raw_ptr res = r;
+//     while (!v->empty()) {
+//         icit d = *(v->end()-1);
+//         res = d.rptr(res);
+//     }
+//     return res;
+// }
+// raw_ptr appfoldl(std::vector<arg_t>* v1, std::vector<arg_t>* v2) {
+//     auto it = v1->begin();
+//     raw_ptr res = it->arg;
+//     it++;
+//     while (it != v1->end()) {
+//         res = it->rptr(res);
+//         it++;
+//     }
+//     for (arg_t arg : *v2) {
+//         res = arg.rptr(res);
+//     }
+//     return res;
+// }

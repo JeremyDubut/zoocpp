@@ -6,110 +6,10 @@
     #include "lexer.hpp"
     #include "common.hpp"
 }
-%code {
-    struct pibinder_t {
-        std::vector<name_t> names;
-        raw_ptr typ;
-        bool icit;
-
-        pibinder_t(std::vector<name_t> names, raw_ptr typ, bool icit): names {names}, typ {typ}, icit {icit} {}
-    };
-
-    raw_ptr pifoldr(std::vector<pibinder_t>& v, raw_ptr r) {
-        if (v.empty()) {
-            return r;
-        }
-        pibinder_t pb = *(v.end()-1);
-        v.pop_back();
-        raw_ptr res = pifoldr(v,r);
-        while (!pb.names.empty()) {
-            name_t var = *(pb.names.end()-1);
-            pb.names.pop_back();
-            if (pb.icit) {
-                res = std::make_shared<ripi_t>(var,pb.typ,res);
-            }
-            else {
-                res = std::make_shared<rpi_t>(var,pb.typ,res);
-            }
-        }
-        return res;
-    }
-
-    struct icit {
-        name_t bind;
-        icit(name_t bind) : bind{bind} {}
-        virtual raw_ptr rptr(raw_ptr) {
-            throw "Wrong type of icit";
-        }
-    };
-    struct iicit : icit {
-        iicit(name_t bind) : icit(bind) {}
-        raw_ptr rptr(raw_ptr r) {
-            return std::make_shared<riabs_t>(bind,r);
-        }
-    };
-    struct eicit : icit {
-        eicit(name_t bind) : icit(bind) {}
-        raw_ptr rptr(raw_ptr r) {
-            return std::make_shared<rabs_t>(bind,r);
-        }
-    };
-    struct nicit : icit {
-        name_t name;
-        nicit(name_t bind,name_t name): icit(bind), name{name} {}
-        raw_ptr rptr(raw_ptr r) {
-            return std::make_shared<rnabs_t>(bind,r,name);
-        }
-    };
-
-    raw_ptr lamfoldr(std::vector<icit>& v, raw_ptr r) {
-        raw_ptr res = r;
-        while (!v.empty()) {
-            icit d = *(v.end()-1);
-            res = d.rptr(res);
-        }
-        return res;
-    }
-
-
-    struct arg_t {
-        raw_ptr arg;
-        arg_t(raw_ptr arg) : arg{arg} {}
-        virtual raw_ptr rptr(raw_ptr) {
-            throw "Wrong type of icit";
-        }
-    };
-    struct iarg_t : arg_t {
-        iarg_t(raw_ptr arg) : arg_t(arg) {}
-        raw_ptr rptr(raw_ptr r) {
-            return std::make_shared<riapp_t>(r,arg);
-        }
-    };
-    struct earg_t : arg_t {
-        earg_t(raw_ptr arg) : arg_t(arg) {}
-        raw_ptr rptr(raw_ptr r) {
-            return std::make_shared<rapp_t>(r,arg);
-        }
-    };
-    struct narg_t : arg_t {
-        name_t name;
-        narg_t(raw_ptr arg,name_t name): arg_t(arg), name{name} {}
-        raw_ptr rptr(raw_ptr r) {
-            return std::make_shared<rnapp_t>(r,arg,name);
-        }
-    };
-
-    raw_ptr appfoldl(raw_ptr r, std::vector<arg_t>& v) {
-        raw_ptr res = r;
-        for (arg_t arg : v) {
-            res = arg.rptr(r);
-        }
-        return res;
-    }
-}
 
 %define api.namespace {foo}
 %define api.parser.class {Parser}
+%define api.value.type { raw_ptr }
 %define api.location.type {location_t}
 
 %locations
@@ -119,7 +19,7 @@
 %header
 %verbose
 
-%parse-param {Lexer &lexer}
+%parse-param {foo::Lexer &lexer}
 %parse-param {const bool debug}
 %parse-param {raw_ptr* term}
 
@@ -138,78 +38,165 @@
         void calcLocation(location_t &current, const RHS &rhs, const std::size_t n);
     }
     
-    #define YYLLOC_DEFAULT(Cur, Rhs, N) calcLocation(Cur, Rhs, N)
+    #define YYLLOC_DEFAULT(Cur, Rhs, N) foo::calcLocation(Cur, Rhs, N)
     #define yylex lexer.yylex
 }
 
-%union {
-    raw_ptr term;
-    foo::pibinder_t pb;
-    std::vector<foo::pibinder_t> pbs;
-    std::vector<name_t> names;
-    foo::icit ic;
-    std::vector<foo::icit> ics;
-    name_t name;
-    foo::arg_t arg;
-    std::vector<foo::arg_t> args;
-}
 
 %token LET IN EQ DOT
 %token LAMBDA
-%token <raw_ptr> VAR 
-%token HOLE U
+%token VAR HOLE U
 %token TO COLON 
-%token LPAR RPAR RBRA LBRA
+%token LPAR RPAR LBRA RBRA
 
-%type <raw_ptr> pTm pLam pLet pPi pFunOrSpine pSpine pAtom main
-%type <foo::pibinder_t> pPiBinder
-%type <std::vector<foo::pibinder_t>> pPiBinderRec
-%type <std::vector<name_t>> pVarList
-%type <foo::icit> pLamBinder
-%type <std::vector<foo::icit>> pLamBinderRec
-%type <name_t> pBind
-%type <foo::arg_t> pArg
-%type <std::vector<foo::arg_t>> pArgRec
+%nonassoc LAMBDA DOT U NL
+%nonassoc VAR HOLE
+%left TO 
+%nonassoc LPAR LBRA
 
-%expect 0
+%expect 1
 
 %%
 
 main: pTm YYEOF { $$ = $1; *term = $$; }
-pTm: pLam { $$ = $1; }
-    | pLet { $$ = $1; }
-    | pFunOrSpine  { $$ = $1; } 
-pLet: LET VAR EQ pTm IN pTm { $$ = std::make_shared<rlet_t>(($VAR)->get_name(),std::make_shared<rhole_t>(),$4,$6) ; }
-    | LET VAR COLON pTm EQ pTm IN pTm { $$ = std::make_shared<rlet_t>($VAR->get_name(),$4,$6,$8) ; }
-pFunOrSpine: pSpine { $$ = $1; }
-    | pSpine TO pTm { $$ = std::make_shared<rpi_t>("_",$1,$3); }
-pPi: pPiBinderRec TO pTm { $$ = pifoldr($1,$3); }
-pPiBinderRec: pPiBinder { $$ = std::vector<pibinder_t>(); $$.push_back($1); }
-    | pPiBinderRec pPiBinder { $$ = $1; $$.push_back($2); }
-pPiBinder: LBRA pVarList COLON pTm RBRA { $$ = pibinder_t($2,$4,true); }
-    | LBRA pVarList RBRA { $$ = pibinder_t($2,std::make_shared<rhole_t>(),true); }
-    | LPAR pVarList COLON pTm RPAR { $$ = pibinder_t($2,$4,false); }
-    | LPAR pVarList RPAR { $$ = pibinder_t($2,std::make_shared<rhole_t>(),false); }
-pLam: LAMBDA pLamBinderRec DOT pTm { $$ = lamfoldr($2,$4); }
-pLamBinderRec: pLamBinder { $$ = std::vector<icit>(); $$.push_back($1); }
-    | pLamBinderRec pLamBinder { $$ = $1; $$.push_back($2); }
-pLamBinder: pBind { $$ = eicit($1); }
-    | LBRA pBind RBRA { $$ = iicit($2); }
-    | LBRA VAR EQ pBind RBRA { $$ = nicit($4,$VAR->get_name()); }
-pSpine: pAtom pArgRec { $$ = appfoldl($1,$2); }
-pArgRec: %empty { $$ = std::vector<arg_t>(); }
-    | pArgRec pArg { $$ = $1; $$.push_back($2); }
-pArg: LBRA VAR EQ pTm RBRA { $$ = narg_t($4,$VAR->get_name()); }
-    | LBRA pTm RBRA { $$ = iarg_t($2); }
-    | pAtom { $$ = earg_t($1); }
-pAtom: VAR { $$ = $VAR; }
-    | U { $$ = std::make_shared<ru_t>(); }
-    | HOLE { $$ = std::make_shared<rhole_t>(); }
-    | LPAR pTm RPAR { $$ = $2; }
-pBind: VAR { $$ = $VAR->get_name(); }
-    | HOLE { $$ = "_"; }
-pVarList: pBind { $$ = std::vector<name_t>(); $$.pushback($1); }
-    | pVarList pBind { $$ = $1; $$.push_back($2); }
+
+pTm: pLam { std::cout << "pLam" << std::endl; $$ = $1; }
+    | pLet { std::cout << "pLet" << std::endl; $$ = $1; }
+    | pPi { std::cout << "pPi" << std::endl; $$ = $1; }
+    | pFunOrSpine  { std::cout << "pFOS" << std::endl; $$ = $1; } 
+
+pLet: LET VAR EQ pTm IN pTm { 
+        std::cout << "pLet impl" << std::endl; 
+        $$ = std::make_shared<rlet_t>(($VAR)->get_name(),std::make_shared<rhole_t>(),$4,$6) ; 
+    }
+    | LET VAR COLON pTm EQ pTm IN pTm { 
+        std::cout << "pLet expl" << std::endl; 
+        $$ = std::make_shared<rlet_t>($VAR->get_name(),$4,$6,$8) ; 
+    }
+
+pFunOrSpine: pSpine TO pTm { 
+        std::cout << "pSpine to tm" << std::endl; 
+        $$ = std::make_shared<rpi_t>("_",$1,$3); 
+    }
+    | pSpine { std::cout << "pSpine" << std::endl; $$ = $1; }
+pPi: pPiBinderRec TO pTm { 
+        std::cout << "pi" << std::endl; 
+        $$ = $1->build($3);
+        }
+
+pPiBinderRec: pPiBinder { 
+        std::cout << "pibinder end" << std::endl; 
+        $$ = std::make_shared<pibinderlist_t>(); 
+        $$->push_back($1); 
+    }
+    | pPiBinderRec pPiBinder { 
+        std::cout << "pibinder rec" << std::endl; 
+        $$ = $1; 
+        $$->push_back($2); 
+    }
+pPiBinder: LBRA pVarList COLON pTm RBRA { 
+        std::cout << "pibinder imp typ" << std::endl; 
+        $$ = std::make_shared<pibinder_t>(*($2->get_namelist()),$4,true); 
+    }
+    | LBRA pVarList RBRA { 
+        std::cout << "pibinder imp" << std::endl; 
+        $$ = std::make_shared<pibinder_t>(*($2->get_namelist()),std::make_shared<rhole_t>(),true); 
+    }
+    | LPAR pVarList COLON pTm RPAR { 
+        std::cout << "pibinder exp" << std::endl; 
+        $$ = std::make_shared<pibinder_t>(*($2->get_namelist()),$4,false); 
+    }
+
+pSpine: pVarListAtom pArgRec { 
+        std::cout << "pSpine" << std::endl; 
+        $$ = $1->auto_build();
+        $$ = $2->build($$); 
+    }
+pArgRec: %empty { $$ = std::make_shared<arglist_t>(); }
+    | pArgRec pArg pVarListE { 
+        std::cout << "pArgRec rec" << std::endl; 
+        $$ = $1; $$->push_back($2); 
+        for (name_t it : *($3->get_namelist())) {
+            raw_ptr r;
+            if (it == "_") {
+                r = std::make_shared<rhole_t>();
+            }
+            else {
+                r = std::make_shared<rvar_t>(it);
+            }
+            $$->push_back(std::make_shared<earg_t>(r));
+        }
+    }
+
+pArg: LBRA pTm RBRA { $$ = std::make_shared<iarg_t>($2); }
+    | LBRA VAR EQ pTm RBRA { $$ = std::make_shared<narg_t>($4,$VAR->get_name()); }
+    | pAtom { $$ = std::make_shared<earg_t>($1); }
+pAtom: U { std::cout << "pAtom u" << std::endl; $$ = std::make_shared<ru_t>(); }
+    | LPAR pTm RPAR { std::cout << "pArgRec term" << std::endl; $$ = $2; }
+pBind: VAR { std::cout << "VAR" << std::endl; $$ = $VAR; }
+    | HOLE { std::cout << "HOLE" << std::endl; $$ = std::make_shared<rhole_t>(); }
+pVarListAtom: pAtom pVarListE { 
+        std::cout << "pVLA atom" << std::endl; 
+        $$ = std::make_shared<arglist_t>(); 
+        $$->push_back($1); 
+        for (name_t it : *($2->get_namelist())) {
+            raw_ptr r;
+            if (it == "_") {
+                r = std::make_shared<rhole_t>();
+            }
+            else {
+                r = std::make_shared<rvar_t>(it);
+            }
+            $$->push_back(std::make_shared<earg_t>(r));}
+        }
+    | pVarList { std::cout << "pVLA VLA" << std::endl; 
+        $$ = std::make_shared<arglist_t>(); 
+        std::vector<name_t> names = *($1->get_namelist());
+        auto it = names.begin();
+        if (*it == "_") {
+            $$->push_back(std::make_shared<rhole_t>());
+        }
+        else {
+            $$->push_back(std::make_shared<rvar_t>(*it));
+        }
+        it++;
+        while (it!=names.end()) {
+            raw_ptr r;
+            if (*it == "_") {
+                r = std::make_shared<rhole_t>();
+            }
+            else {
+                r = std::make_shared<rvar_t>(*it);
+            }
+            $$->push_back(std::make_shared<earg_t>(r));
+            it++;
+        }
+    }
+pVarList: pVarListE pBind { 
+        std::cout << "pVL rec" << std::endl; 
+        $$ = $1; $$->get_namelist()->push_back($2->get_name()); }
+pVarListE: pVarListE pBind { 
+        std::cout << "pVLE rec" << std::endl; 
+        $$ = $1; $$->get_namelist()->push_back($2->get_name()); }
+    | empty { std::cout << "empty" << std::endl; $$ = std::make_shared<namelist_t>();  }
+empty: %empty { $$ = std::make_shared<ru_t>();}
+
+pLam: LAMBDA pLamBinderRec DOT pTm { 
+        std::cout << "pLam" << std::endl; 
+        $$ = $2->build($4);
+        }
+pLamBinderRec: pLamBinder { 
+        std::cout << "pLB rec" << std::endl; 
+        $$ = std::make_shared<icitlist_t>(); 
+        $$->push_back($1);
+    }
+    | pLamBinderRec pLamBinder { 
+        std::cout << "pLB end" << std::endl; $$ = $1; 
+        $$->push_back($2); 
+    }
+pLamBinder: pBind { $$ = std::make_shared<eicit>($1->get_name()); }
+    | LBRA pBind RBRA { $$ = std::make_shared<iicit>($2->get_name()); }
+    | LBRA VAR EQ pBind RBRA { $$ = std::make_shared<nicit>($4->get_name(),$VAR->get_name()); }
 
 %%
 

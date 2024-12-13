@@ -19,14 +19,20 @@
 %option yyclass="Lexer"
 %option prefix="yy_foo_"
 
+
+%x comment
+
 %%
 
 %{
     using Token = Parser::token;
 %}
 
-
 --[^"\n"]* ;
+"{-"            { BEGIN(comment); }
+<comment>"-}" { BEGIN(INITIAL); }
+<comment>\n   { ++currentLine; }
+<comment>.    { }
 "\n" { ++currentLine; }
 [[:space:]] ;
 "_" { return Token::HOLE; }
