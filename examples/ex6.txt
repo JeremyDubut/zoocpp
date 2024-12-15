@@ -18,7 +18,7 @@ let the : (A : _) -> A -> A = \_ x. x;
 let argTest1 = const {U}{U} U;
 
 -- or can be given by name (names come from the function types)
-let argTest2 = const {B = U} U;  -- only give B, the second implicit arg
+let argTest2 = const {!B = U} U;  -- only give B, the second implicit arg
 
 -- likewise, implicit lambdas can be explicitly given
 let id2 : {A} -> A -> A = \{A} x. x;
@@ -32,7 +32,7 @@ let namedLam2 : {A B C} -> A -> B -> C -> A = \{C = X} a b c. a; -- third arg in
 Implicit application insertion rules:
 
   - In "t u", if t has type {x : A} -> B, we insert a fresh application as t {?a} u
-  - In "t {x = u}", we insert applications until we hit the "x" domain name. if t's type
+  - In "t {!x = u}", we insert applications until we hit the "x" domain name. if t's type
     has no such domain binder name, it's an error.
   - In "t {u}", we do not insert applications
   - Otherwise, given t,
@@ -108,6 +108,6 @@ let refl : {A}{x : A} -> Eq x x
     = \_ px. px;
 
 let sym : {A x y} -> Eq {A} x y -> Eq y x -- parser gives an error here, not expecting {A} but something like {A=B}
-  = λ {A}{x}{y} p. p (λ y. Eq y x) refl;
+  = λ {A}{x}{y} p. p (λ y. Eq {y} x) refl;
 
 the (Eq (mul ten ten) hundred) refl

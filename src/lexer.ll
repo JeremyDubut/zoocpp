@@ -21,6 +21,7 @@
 
 
 %x comment
+%x vareq
 
 %%
 
@@ -40,7 +41,6 @@
 "\\" { return Token::LAMBDA; }
 "let" { return Token::LET; }
 ":" { return Token::COLON; }
-"=" { return Token::EQ; }
 "->" { return Token::TO; }
 "." { return Token::DOT; }
 "U" { return Token::U; }
@@ -50,5 +50,7 @@
 ")" { return Token::RPAR; }
 "{" { return Token::LBRA; }
 "}" { return Token::RBRA; }
+"=" { return Token::EQ; }
+"!" { return Token::BANG; }
 [[:alnum:]]+ { copyValue(); return Token::VAR; }
 <<EOF>> { return Token::YYEOF; }

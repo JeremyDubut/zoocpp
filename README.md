@@ -7,6 +7,8 @@ See:
 
 What is working:
     - implemented up to step 3
+    - parser for step 4
 
 What is not working:
-    - the parser is not optimal, needs more parentheses than it should 
+    - I can't figure out how to parse named implicit arguments
+        - temporary fix: the syntax is {! X = Term } to tell the parser explicitly about them
