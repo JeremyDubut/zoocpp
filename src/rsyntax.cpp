@@ -166,12 +166,34 @@ inferrance_t rvar_t::infer(context_t& cont){
         throw "Unbounded variable "+name;
     }
 }
-inferrance_t rapp_t::infer(context_t& cont) {//TODO
+inferrance_t rapp_t::infer(context_t& cont) {
     // std::cout << "Inferring app " << *this->left << " and " << *this->right << std::endl;
-    inferrance_t inf = left->infer(cont);
-    inferrance_t res = inf.typ->force()->infer_RAPP(cont,inf.term,right);
+    inferrance_t inff = left->infer(cont);
+    inff = inff.typ->force()->insert(cont,inff.term);
+    std::pair<value_ptr,closure_t> infr = inff.typ->force()->infer_RAPP(cont);
+    term_ptr rterm = right->check(cont,infr.first);
+    CAPP(rterm->eval(cont.environment),infr.second,typ)
     // std::cout << "App " << *this << " inferred as " << *res.term << " of type " << *res.typ << std::endl;
-    return res;
+    return inferrance_t(std::make_shared<app_t>(inff.term,rterm),typ);
+}
+inferrance_t riapp_t::infer(context_t& cont) {
+    // std::cout << "Inferring app " << *this->left << " and " << *this->right << std::endl;
+    inferrance_t inff = left->infer(cont);
+    std::pair<value_ptr,closure_t> infr = inff.typ->force()->infer_RINAPP(cont);
+    term_ptr rterm = right->check(cont,infr.first);
+    CAPP(rterm->eval(cont.environment),infr.second,typ)
+    // std::cout << "App " << *this << " inferred as " << *res.term << " of type " << *res.typ << std::endl;
+    return inferrance_t(std::make_shared<iapp_t>(inff.term,rterm),typ);
+}
+inferrance_t rnapp_t::infer(context_t& cont) {
+    // std::cout << "Inferring app " << *this->left << " and " << *this->right << std::endl;
+    inferrance_t inff = left->infer(cont);
+    inff = inff.typ->force()->insertUntilName(cont,ivar,inff.term);
+    std::pair<value_ptr,closure_t> infr = inff.typ->force()->infer_RINAPP(cont);
+    term_ptr rterm = right->check(cont,infr.first);
+    CAPP(rterm->eval(cont.environment),infr.second,typ)
+    // std::cout << "App " << *this << " inferred as " << *res.term << " of type " << *res.typ << std::endl;
+    return inferrance_t(std::make_shared<iapp_t>(inff.term,rterm),typ);
 }
 inferrance_t rpi_t::infer(context_t& cont) {
     // std::cout << "Inferring pi " << *this << std::endl;
@@ -180,6 +202,16 @@ inferrance_t rpi_t::infer(context_t& cont) {
     term_ptr tbody = body->check(cont,VU);
     cont.pop(var);
     term_ptr res = std::make_shared<pi_t>(var,ttyp,tbody);
+    // std::cout << "Pi " << *this << " inferred as " << *res << " of type U" << std::endl;
+    return inferrance_t(res,VU);
+}
+inferrance_t ripi_t::infer(context_t& cont) {
+    // std::cout << "Inferring pi " << *this << std::endl;
+    term_ptr ttyp = typ->check(cont,VU);
+    cont.new_var(var,ttyp->eval(cont.environment));
+    term_ptr tbody = body->check(cont,VU);
+    cont.pop(var);
+    term_ptr res = std::make_shared<ipi_t>(var,ttyp,tbody);
     // std::cout << "Pi " << *this << " inferred as " << *res << " of type U" << std::endl;
     return inferrance_t(res,VU);
 }

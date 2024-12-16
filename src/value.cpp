@@ -5,10 +5,6 @@
 #include "syntax.hpp"
 #include "metavar.hpp"
 
-#define CAPP(v,body,val) \
-    body.environment.push_back(v); \
-    value_ptr val = body.term->eval(body.environment); \
-    body.environment.pop_back(); 
 #define TCAPP(v) CAPP(v,this->body,val)
 #define VARL std::make_shared<vrig_t>(l)
 #define VCAPP(body,val) CAPP(VARL,body,val)
@@ -312,7 +308,14 @@ term_ptr vipi_t::check_RNABS(context_t& cont,name_t var, name_t ivar, raw_ptr r)
         cont.pop(var);
         return res;
     }
-    throw "Error wrong check"; //TODO
+    else {
+        cont.new_bind(this->var,this->typ);
+        // // std::cout << cont;
+        TCAPP(std::make_shared<vrig_t>(cont.level-1));
+        term_ptr res = std::make_shared<iabs_t>(this->var, val->check_RNABS(cont,var,ivar,r));
+        cont.pop(this->var);
+        return res;
+    }
 }
 
 term_ptr value_t::check_LET(context_t& cont,name_t var,raw_ptr typ,raw_ptr def,raw_ptr body) {
@@ -352,7 +355,7 @@ term_ptr vipi_t::check_HOLE(context_t& cont) {
     return res;
 }
 
-inferrance_t value_t::infer_RAPP(context_t& cont,term_ptr left,raw_ptr right) {
+std::pair<value_ptr,closure_t> value_t::infer_RAPP(context_t& cont) {
     value_ptr a = FRESHMETA->eval(cont.environment);
     std::stringstream ss("");
     ss << "x" << this;
@@ -361,23 +364,52 @@ inferrance_t value_t::infer_RAPP(context_t& cont,term_ptr left,raw_ptr right) {
     closure_t body = closure_t(cont.environment,FRESHMETA);
     cont.pop(var);
     unify(cont.level,std::make_shared<vpi_t>(var,a,body));
-    term_ptr rterm = right->check(cont, a);
-    value_ptr rvalue = rterm->eval(cont.environment);
-    CAPP(rvalue,body,val)
-    return inferrance_t(std::make_shared<app_t>(left,rterm),val);
+    return std::make_pair(a,body);
 
 }
-inferrance_t vpi_t::infer_RAPP(context_t& cont, term_ptr left, raw_ptr right) {
+std::pair<value_ptr,closure_t> vpi_t::infer_RAPP(context_t&) {
     // // std::cout << "Inferring function type for " << *left << " with type " << *this << std::endl;
-    // // std::cout << " in env " << body.environment << std::endl;
-    term_ptr rterm = right->check(cont, typ);
-    // // std::cout << "Evaluating right term of app " << *rterm << " in env " << body.environment << std::endl;
-    value_ptr rvalue = rterm->eval(cont.environment);
-    // // std::cout << "Right term of app " << *rterm << " evaluated as " << *rvalue << std::endl;
-    TCAPP(rvalue);
-    return inferrance_t(std::make_shared<app_t>(left,rterm),val);
+    return std::make_pair(typ,body);
+}
+std::pair<value_ptr,closure_t> vipi_t::infer_RAPP(context_t&) {
+    // // std::cout << "Inferring function type for " << *left << " with type " << *this << std::endl;
+    throw "Icit mismatch";
 }
 
+std::pair<value_ptr,closure_t> value_t::infer_RINAPP(context_t& cont) {
+    value_ptr a = FRESHMETA->eval(cont.environment);
+    std::stringstream ss("");
+    ss << "x" << this;
+    name_t var = ss.str();
+    cont.new_var(var,a);
+    closure_t body = closure_t(cont.environment,FRESHMETA);
+    cont.pop(var);
+    unify(cont.level,std::make_shared<vipi_t>(var,a,body));
+    return std::make_pair(a,body);
+
+}
+std::pair<value_ptr,closure_t> vipi_t::infer_RINAPP(context_t&) {
+    // // std::cout << "Inferring function type for " << *left << " with type " << *this << std::endl;
+    return std::make_pair(typ,body);
+}
+std::pair<value_ptr,closure_t> vpi_t::infer_RINAPP(context_t&) {
+    // // std::cout << "Inferring function type for " << *left << " with type " << *this << std::endl;
+    throw "Icit mismatch";
+}
+inferrance_t value_t::insertUntilName(context_t&,name_t,term_ptr) {
+    throw "No named implicit argument";
+}
+inferrance_t vipi_t::insertUntilName(context_t& cont,name_t ivar,term_ptr lterm) {
+    if (ivar == var) {
+        return inferrance_t(lterm,shared_from_this());
+    }
+    else {
+        term_ptr m = FRESHMETA;
+        value_ptr mv = m->eval(cont.environment);
+        TCAPP(mv)
+        return inferrance_t(std::make_shared<iapp_t>(lterm,m),val);
+    }
+}
 
 value_ptr value_t::clone() {
     return shared_from_this();

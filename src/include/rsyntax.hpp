@@ -106,6 +106,7 @@ struct riapp_t : rapp_t {
     riapp_t(raw_ptr left,raw_ptr right) : rapp_t(left,right) {}
 
     std::ostream& to_string(std::ostream&);
+    inferrance_t infer(context_t&);
 };
 struct rnapp_t : rapp_t {
 
@@ -114,6 +115,7 @@ struct rnapp_t : rapp_t {
     rnapp_t(raw_ptr left,raw_ptr right, name_t ivar) : rapp_t(left,right), ivar {ivar} {}
 
     std::ostream& to_string(std::ostream&);
+    inferrance_t infer(context_t&);
 };
 
 struct rlet_t : raw_t {
@@ -165,6 +167,7 @@ struct ripi_t : rpi_t {
     ripi_t(name_t var, raw_ptr typ, raw_ptr body) : rpi_t(var,typ,body) {}
 
     std::ostream& to_string(std::ostream&);
+    inferrance_t infer(context_t&);
 };
 
 struct rhole_t : raw_t {

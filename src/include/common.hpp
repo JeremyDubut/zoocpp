@@ -29,4 +29,8 @@ typedef std::unordered_map<std::size_t,std::size_t> renamingFun_t;
 
 #define FRESHMETA std::make_shared<imeta_t>(cont.flags)
 #define VU std::make_shared<vu_t>()
+#define CAPP(v,body,val) \
+    body.environment.push_back(v); \
+    value_ptr val = body.term->eval(body.environment); \
+    body.environment.pop_back(); 
 
