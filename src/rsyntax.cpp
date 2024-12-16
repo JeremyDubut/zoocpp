@@ -4,13 +4,13 @@
 #include "rsyntax.hpp"
 #include "syntax.hpp"
 
-#define BIND_CONTEXT(v,b) \
+#define BIND_CONTEXT(v,b,bp) \
     environment.push_back(v); \
-    types.try_emplace(var,std::vector<std::pair<value_ptr,std::size_t>>()); \
-    types[var].push_back(std::pair<value_ptr,std::size_t>(t,level)); \
+    types.try_emplace(var,std::vector<type_t>()); \
+    type_t typ{t,level,bp}; \
+    types[var].push_back(typ); \
     flags.push_back(b); \
     level++;
-#define VU std::make_shared<vu_t>()
 
 std::ostream& operator<< (std::ostream& out, raw_t& term) {return term.to_string(out);}
 
@@ -43,10 +43,13 @@ name_t rvar_t::get_name() const {return name;}
 name_t rhole_t::get_name() const {return "_";}
 
 void context_t::new_var(name_t var, value_ptr t) {
-    BIND_CONTEXT(std::make_shared<vrig_t>(level),true);
+    BIND_CONTEXT(std::make_shared<vrig_t>(level),true,true);
 }
 void context_t::new_val(name_t var, value_ptr t, value_ptr v) {
-    BIND_CONTEXT(v,false);
+    BIND_CONTEXT(v,false,true);
+}
+void context_t::new_bind(name_t var, value_ptr t) {
+    BIND_CONTEXT(std::make_shared<vrig_t>(level),true,false);
 }
 void context_t::pop(name_t var) {
     environment.pop_back();
@@ -94,22 +97,28 @@ term_ptr rabs_t::check(context_t& cont,value_ptr v) {
     // std::cout << "Type check of Lam " << *this << " with type " << *v << " successful, inferred as " << *res << std::endl;
     return res;
 }
+term_ptr riabs_t::check(context_t& cont,value_ptr v) {
+    // std::cout << "Checking Lam " << *this << " with type " << *v << std::endl;
+    term_ptr res = v->check_RIABS(cont,var,body);
+    // std::cout << "Type check of Lam " << *this << " with type " << *v << " successful, inferred as " << *res << std::endl;
+    return res;
+}
+term_ptr rnabs_t::check(context_t& cont,value_ptr v) {
+    // std::cout << "Checking Lam " << *this << " with type " << *v << std::endl;
+    term_ptr res = v->check_RNABS(cont,var,ivar,body);
+    // std::cout << "Type check of Lam " << *this << " with type " << *v << " successful, inferred as " << *res << std::endl;
+    return res;
+}
 term_ptr rlet_t::check(context_t& cont,value_ptr v) {
     // std::cout << "Checking Let " << *typ << " with type " << *v << std::endl;
-    term_ptr ta = typ->check(cont,VU);
-    value_ptr va = ta->eval(cont.environment);
-    term_ptr tt = def->check(cont,va);
-    value_ptr vt = tt->eval(cont.environment);
-    cont.new_val(var,va,vt);
-    term_ptr tu = body->check(cont,v);
-    cont.pop(var);
-    term_ptr res = std::make_shared<let_t>(var,ta,tt,tu);
+    term_ptr res = v->check_LET(cont,var,typ,def,body);
+    return res;
     // std::cout << "Type check of Let " << *this << " with type " << *v << " successful, inferred as " << *res << std::endl;
     return res;
 }
-term_ptr rhole_t::check(context_t& cont,value_ptr) {
+term_ptr rhole_t::check(context_t& cont,value_ptr v) {
     // std::cout << "Checking Hole" << std::endl;
-    term_ptr res = FRESHMETA;
+    term_ptr res = v->check_HOLE(cont);
     // std::cout << "Type check of hole done" << std::endl;
     return res;
 }
@@ -122,11 +131,15 @@ inferrance_t rabs_t::infer(context_t& cont){
     value_ptr a = FRESHMETA->eval(cont.environment);
     cont.new_var(var,a);
     inferrance_t inf = body->infer(cont);
+    inf = inf.term->insert(cont,inf.typ);
     cont.pop(var);
     closure_t clos = closure_t(cont.environment,inf.typ->quote(cont.level+1));
     inferrance_t res = inferrance_t(std::make_shared<abs_t>(var,inf.term),std::make_shared<vpi_t>(var,a,clos));
     // std::cout << "Inferrance of Lam" << *this << "successful, inferred as " << *res.term << " with type " << *res.typ << std::endl;
     return res;
+}
+inferrance_t rnabs_t::infer(context_t&) {
+    throw "Cannot infer a named implicit lambda";
 }
 inferrance_t ru_t::infer(context_t&){
     // std::cout << "Inferring U" << std::endl;
@@ -136,10 +149,18 @@ inferrance_t ru_t::infer(context_t&){
 inferrance_t rvar_t::infer(context_t& cont){
     try {
         // std::cout << "Inferring variable " << name << std::endl;
-        auto res = *(cont.types.at(name).end()-1);
-        term_ptr term = std::make_shared<var_t>(cont.level-1-res.second);
-        // std::cout << "Variable  " << name << " inferred as " << *term << " of typ " << *res.first << std::endl;
-        return inferrance_t(term,res.first->clone());
+        auto res = cont.types.at(name).end()-1;
+        while (res != cont.types.at(name).begin()-1 && !res->source) {
+            res = res-1;
+        }
+        if (res != cont.types.at(name).begin()-1) {
+            term_ptr term = std::make_shared<var_t>(cont.level-1-res->level);
+            // std::cout << "Variable  " << name << " inferred as " << *term << " of typ " << *res.first << std::endl;
+            return inferrance_t(term,res->typ->clone());
+        }
+        else {
+            throw "Unbounded variable "+name;
+        }
     }
     catch (const std::out_of_range& e) {
         throw "Unbounded variable "+name;

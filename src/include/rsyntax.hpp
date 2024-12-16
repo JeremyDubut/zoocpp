@@ -1,6 +1,13 @@
 #pragma once
 #include "common.hpp"
 
+struct type_t {
+    value_ptr typ;
+    std::size_t level;
+    bool source;
+
+    type_t(value_ptr typ, std::size_t level, bool source) : typ{typ}, level{level}, source{source} {}
+};
 struct context_t {
 
     environment_t environment;
@@ -11,6 +18,7 @@ struct context_t {
     context_t() : environment {environment_t()}, types {types_t()}, flags {flags_t()}, level {0} {}
     void new_var(name_t, value_ptr);
     void new_val(name_t, value_ptr, value_ptr);
+    void new_bind(name_t, value_ptr);
     void pop(name_t);
 };
 std::ostream& operator<< (std::ostream& out, context_t& cont);
@@ -71,6 +79,7 @@ struct riabs_t : rabs_t {
     riabs_t(name_t var, raw_ptr body) : rabs_t(var,body) {}
 
     std::ostream& to_string(std::ostream&);
+    term_ptr check(context_t&,value_ptr);
 };
 struct rnabs_t : rabs_t {
 
@@ -79,6 +88,8 @@ struct rnabs_t : rabs_t {
     rnabs_t(name_t var, raw_ptr body, name_t ivar) : rabs_t(var,body), ivar {ivar} {}
 
     std::ostream& to_string(std::ostream&);
+    term_ptr check(context_t&,value_ptr);
+    inferrance_t infer(context_t&);
 };
 
 struct rapp_t : raw_t {

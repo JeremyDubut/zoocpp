@@ -20,9 +20,14 @@
     throw ss.str();
 #define FUNSP(v,fun,spine) \
     term_ptr trhs = v; \
-    for (value_ptr it : spine) { \
-        term_ptr term = it->clone()->fun; \
-        trhs = std::make_shared<app_t>(trhs,term); \
+    for (std::pair<value_ptr,bool> it : spine) { \
+        term_ptr term = it.first->clone()->fun; \
+        if (it.second) { \
+            trhs = std::make_shared<iapp_t>(trhs,term); \
+        } \
+        else { \
+            trhs = std::make_shared<app_t>(trhs,term); \
+        } \
     } 
 #define QUOTESP(v) \
     FUNSP(v,quote(l),spine)\
@@ -33,27 +38,51 @@
     return trhs;
 #define UNIFYSP \
     auto it1 = spine1.begin(); \
-    for (value_ptr it : spine) { \
-        (*it1)->clone()->unify(l,it->clone()); \
+    for (auto it : spine) { \
+        (*it1).first->clone()->unify(l,it.first->clone()); \
+        it1++; \
     }
 #define SOLVE(dom) \
     environment_t env {}; \
-    for (std::size_t i = 0; i < dom; i++) { \
+    std::size_t i = 0; \
+    for (auto it : spine) { \
         std::stringstream ss(""); \
         ss << "x" << dom-i; \
         name_t name = ss.str(); \
-        trhs = std::make_shared<abs_t>(name,trhs); \
+        if (it.second) { \
+            trhs = std::make_shared<iabs_t>(name,trhs); \
+        } \
+        else { \
+            trhs = std::make_shared<abs_t>(name,trhs); \
+        } \
+        i++; \
     } \
     value_ptr solution = trhs->eval(env); \
-    metavar_t::lookupTable[index] = solution; \
+    metavar_t::lookupTable[index] = solution; 
+#define RENAMEABS(t) \
+    std::size_t l = ren.cod; \
+    VTCAPP; \
+    ren.lift(); \
+    term_ptr res = val->rename(m,ren); \
+    ren.pop(); \
+    return std::make_shared<t>(var,res);
+#define RENAMEPI(t) \
+    std::size_t l = ren.cod; \
+    VTCAPP; \
+    ren.lift(); \
+    term_ptr res = val->rename(m,ren); \
+    ren.pop(); \
+    return std::make_shared<t>(var,typ->rename(m,ren),res);
 
 
 std::ostream& value_t::to_string(std::ostream& out) {return out << "Unknown value";}
 std::ostream& vvar_t::to_string(std::ostream& out) {return out << "Var" << level;}
 std::ostream& vabs_t::to_string(std::ostream& out) {return out << "λ " << body;}
+std::ostream& viabs_t::to_string(std::ostream& out) {return out << "λ{} " << body;}
 std::ostream& vapp_t::to_string(std::ostream& out) {return out << "(" << *left << " " << *right << ")";}
 std::ostream& vu_t::to_string(std::ostream& out) {return out << "𝒰";}
 std::ostream& vpi_t::to_string(std::ostream& out) {return out << "(" << var << " : " << *typ << ") → " << body;}
+std::ostream& vipi_t::to_string(std::ostream& out) {return out << "{" << var << " : " << *typ << "} → " << body;}
 std::ostream& vflex_t::to_string(std::ostream& out) {return out << "?" << index;}
 std::ostream& vrig_t::to_string(std::ostream& out) {return out << "?" << level;}
 
@@ -75,30 +104,30 @@ std::ostream& operator<< (std::ostream& out, value_t& value) {
     return value.to_string(out);
 }
 
-value_ptr value_t::vApp(value_ptr) {
+value_ptr value_t::vApp(value_ptr, bool) {
     std::stringstream ss("");
     ss << "Trying to apply to a term that is not a lambda or a metavariable: " << *this;
     throw ss.str();
 }
-value_ptr vabs_t::vApp(value_ptr v) {
+value_ptr vabs_t::vApp(value_ptr v, bool) {
     TCAPP(v);
     return val;
 }
-value_ptr vflex_t::vApp(value_ptr v) {
+value_ptr vflex_t::vApp(value_ptr v, bool icit) {
     spine_t spine_cp = spine;
-    spine_cp.push_back(v);
+    spine_cp.push_back(std::make_pair(v,icit));
     return std::make_shared<vflex_t>(index,spine_cp);
 }
-value_ptr vrig_t::vApp(value_ptr v) {
+value_ptr vrig_t::vApp(value_ptr v, bool icit) {
     spine_t spine_cp = spine;
-    spine_cp.push_back(v);
+    spine_cp.push_back(std::make_pair(v,icit));
     return std::make_shared<vrig_t>(level,spine_cp);
 }
 
 value_ptr value_t::vAppSp(spine_t& spine) {
     value_ptr res = shared_from_this();
-    for (value_ptr it : spine) {
-        res = res->vApp(it->clone());
+    for (std::pair<value_ptr,bool> it : spine) {
+        res = res->vApp(it.first->clone(),it.second);
     }
     return res;
 }
@@ -129,6 +158,10 @@ term_ptr vabs_t::quote(std::size_t l) {
     VTCAPP;
     return std::make_shared<abs_t>(var,val->quote(l+1));
 }
+term_ptr viabs_t::quote(std::size_t l) {
+    VTCAPP;
+    return std::make_shared<iabs_t>(var,val->quote(l+1));
+}
 term_ptr vapp_t::quote(std::size_t l) {
     return std::make_shared<app_t>(left->quote(l),right->quote(l));
 }
@@ -138,6 +171,10 @@ term_ptr vu_t::quote(std::size_t) {
 term_ptr vpi_t::quote(std::size_t l) {
     VTCAPP;
     return std::make_shared<pi_t>(var,typ->quote(l),val->quote(l+1));
+}
+term_ptr vipi_t::quote(std::size_t l) {
+    VTCAPP;
+    return std::make_shared<ipi_t>(var,typ->quote(l),val->quote(l+1));
 }
 term_ptr vflex_t::quote(std::size_t l) {
     QUOTESP(std::make_shared<meta_t>(index))
@@ -226,6 +263,94 @@ term_ptr vpi_t::check_RABS(context_t& cont,name_t var, raw_ptr r) {
     cont.pop(var);
     return res;
 }
+term_ptr vipi_t::check_RABS(context_t& cont,name_t var, raw_ptr r) {
+    // // std::cout << "Checking inside lam " << var << " and " << *r << " of type " << *this << std::endl;
+    // // std::cout << cont;
+    cont.new_bind(this->var,this->typ);
+    // // std::cout << cont;
+    TCAPP(std::make_shared<vrig_t>(cont.level-1));
+    term_ptr res = std::make_shared<iabs_t>(this->var, val->check_RABS(cont,var,r));
+    cont.pop(this->var);
+    return res;
+}
+term_ptr value_t::check_RIABS(context_t& cont,name_t var, raw_ptr body) {
+    value_ptr a = FRESHMETA->eval(cont.environment);
+    cont.new_var(var,a);
+    inferrance_t inf = body->infer(cont);
+    cont.pop(var);
+    closure_t clos = closure_t(cont.environment,inf.typ->quote(cont.level+1));
+    unify(cont.level,std::make_shared<vipi_t>(var,a,clos));
+    return std::make_shared<iabs_t>(var,inf.term);
+}
+term_ptr vipi_t::check_RIABS(context_t& cont,name_t var, raw_ptr r) {
+    // // std::cout << "Checking inside lam " << var << " and " << *r << " of type " << *this << std::endl;
+    // // std::cout << cont;
+    cont.new_var(var,typ);
+    // // std::cout << cont;
+    TCAPP(std::make_shared<vrig_t>(cont.level-1));
+    term_ptr res = std::make_shared<iabs_t>(var, r->check(cont,val));
+    cont.pop(var);
+    return res;
+}
+term_ptr value_t::check_RNABS(context_t& cont,name_t var, name_t, raw_ptr body) {
+    value_ptr a = FRESHMETA->eval(cont.environment);
+    cont.new_var(var,a);
+    inferrance_t inf = body->infer(cont);
+    cont.pop(var);
+    closure_t clos = closure_t(cont.environment,inf.typ->quote(cont.level+1));
+    unify(cont.level,std::make_shared<vipi_t>(var,a,clos));
+    return std::make_shared<iabs_t>(var,inf.term);
+}
+term_ptr vipi_t::check_RNABS(context_t& cont,name_t var, name_t ivar, raw_ptr r) {
+    // // std::cout << "Checking inside lam " << var << " and " << *r << " of type " << *this << std::endl;
+    // // std::cout << cont;
+    if (ivar == this->var) {
+        cont.new_var(var,typ);
+        // // std::cout << cont;
+        TCAPP(std::make_shared<vrig_t>(cont.level-1));
+        term_ptr res = std::make_shared<iabs_t>(var, r->check(cont,val));
+        cont.pop(var);
+        return res;
+    }
+    throw "Error wrong check"; //TODO
+}
+
+term_ptr value_t::check_LET(context_t& cont,name_t var,raw_ptr typ,raw_ptr def,raw_ptr body) {
+    term_ptr ta = typ->check(cont,VU);
+    value_ptr va = ta->eval(cont.environment);
+    term_ptr tt = def->check(cont,va);
+    value_ptr vt = tt->eval(cont.environment);
+    cont.new_val(var,va,vt);
+    term_ptr tu = body->check(cont,shared_from_this());
+    cont.pop(var);
+    term_ptr res = std::make_shared<let_t>(var,ta,tt,tu);
+    return res;
+}
+term_ptr vipi_t::check_LET(context_t& cont,name_t var,raw_ptr typ,raw_ptr def,raw_ptr body) {
+    // // std::cout << "Checking inside lam " << var << " and " << *r << " of type " << *this << std::endl;
+    // // std::cout << cont;
+    cont.new_bind(this->var,this->typ);
+    // // std::cout << cont;
+    TCAPP(std::make_shared<vrig_t>(cont.level-1));
+    term_ptr res = std::make_shared<iabs_t>(this->var, val->check_LET(cont,var,typ,def,body));
+    cont.pop(this->var);
+    return res;
+}
+
+term_ptr value_t::check_HOLE(context_t& cont) {
+    term_ptr res = FRESHMETA;
+    return res;
+}
+term_ptr vipi_t::check_HOLE(context_t& cont) {
+    // // std::cout << "Checking inside lam " << var << " and " << *r << " of type " << *this << std::endl;
+    // // std::cout << cont;
+    cont.new_bind(this->var,this->typ);
+    // // std::cout << cont;
+    TCAPP(std::make_shared<vrig_t>(cont.level-1));
+    term_ptr res = std::make_shared<iabs_t>(this->var, val->check_HOLE(cont));
+    cont.pop(this->var);
+    return res;
+}
 
 inferrance_t value_t::infer_RAPP(context_t& cont,term_ptr left,raw_ptr right) {
     value_ptr a = FRESHMETA->eval(cont.environment);
@@ -262,6 +387,9 @@ value_ptr vapp_t::clone() {
 }
 value_ptr vpi_t::clone() {
     return std::make_shared<vpi_t>(var,typ->clone(),body);
+}
+value_ptr vipi_t::clone() {
+    return std::make_shared<vipi_t>(var,typ->clone(),body);
 }
 value_ptr vflex_t::clone() {
     return std::make_shared<vflex_t>(index,spine);
@@ -300,20 +428,16 @@ term_ptr vu_t::rename(std::size_t,renaming_t&) {
     return std::make_shared<u_t>();
 }
 term_ptr vabs_t::rename(std::size_t m,renaming_t& ren) {
-    std::size_t l = ren.cod;
-    VTCAPP;
-    ren.lift();
-    term_ptr res = val->rename(m,ren);
-    ren.pop();
-    return std::make_shared<abs_t>(var,res);
+    RENAMEABS(abs_t)
+}
+term_ptr viabs_t::rename(std::size_t m,renaming_t& ren) {
+    RENAMEABS(iabs_t)
 }
 term_ptr vpi_t::rename(std::size_t m,renaming_t& ren) {
-    std::size_t l = ren.cod;
-    VTCAPP;
-    ren.lift();
-    term_ptr res = val->rename(m,ren);
-    ren.pop();
-    return std::make_shared<pi_t>(var,typ->rename(m,ren),res);
+    RENAMEPI(pi_t)
+}
+term_ptr vipi_t::rename(std::size_t m,renaming_t& ren) {
+    RENAMEPI(ipi_t)
 }
 term_ptr vflex_t::rename(std::size_t m,renaming_t& ren) {
     if (index == m) {
@@ -347,6 +471,9 @@ void value_t::unify(std::size_t,value_ptr) {
 void vabs_t::unify(std::size_t l,value_ptr v) {
     v->unify_ABS(l,body);
 }
+void viabs_t::unify(std::size_t l,value_ptr v) {
+    v->unify_IABS(l,body);
+}
 void vu_t::unify(std::size_t,value_ptr v) {
     v->unify_U();
 }
@@ -363,10 +490,23 @@ void vflex_t::unify(std::size_t l,value_ptr v) {
 void value_t::unify_ABS(std::size_t l ,closure_t& body) {
     // // std::cout << "Unifying Lam " << body << " with term " << *this << std::endl;
     VCAPP(body,val)
-    val->unify(l+1,vApp(VARL));
+    val->unify(l+1,vApp(VARL,false));
     // // std::cout << "Unification of Lam " << body << " with term " << *this << " successful" << std::endl;
 }
 void vabs_t::unify_ABS(std::size_t l ,closure_t& body1) {
+    // // std::cout << "Unifying Lam " << body << " with Lam " << *this << std::endl;
+    VCAPP(body1,val1)
+    VTCAPP
+    val1->unify(l+1,val);
+    // // std::cout << "Unification of Lam " << body << " with Lam " << *this << " successful" << std::endl;
+}
+void value_t::unify_IABS(std::size_t l ,closure_t& body) {
+    // // std::cout << "Unifying Lam " << body << " with term " << *this << std::endl;
+    VCAPP(body,val)
+    val->unify(l+1,vApp(VARL,true));
+    // // std::cout << "Unification of Lam " << body << " with term " << *this << " successful" << std::endl;
+}
+void vabs_t::unify_IABS(std::size_t l ,closure_t& body1) {
     // // std::cout << "Unifying Lam " << body << " with Lam " << *this << std::endl;
     VCAPP(body1,val1)
     VTCAPP
@@ -406,6 +546,27 @@ void vflex_t::unify_PI(std::size_t level, name_t var, value_ptr typ,closure_t& b
     term_ptr trhs = std::make_shared<pi_t>(var,typ->rename(index,ren),res);
     SOLVE(ren.dom)
 }
+void value_t::unify_IPI(std::size_t,name_t,value_ptr,closure_t&) {
+    std::stringstream ss("");
+    ss << "Unification error: rigid mismatch between iPi and " << *this;
+    throw ss.str();
+}
+void vipi_t::unify_IPI(std::size_t l,name_t,value_ptr typ1,closure_t& body1) {
+    typ1->unify(l,typ);
+    VCAPP(body1,val1)
+    VTCAPP
+    val1->unify(l+1,val);
+}
+void vflex_t::unify_IPI(std::size_t level, name_t var, value_ptr typ,closure_t& body) {
+    renaming_t ren = renaming_t(level,spine);
+    std::size_t l = ren.cod;
+    VCAPP(body,val);
+    ren.lift();
+    term_ptr res = val->rename(index,ren);
+    ren.pop();
+    term_ptr trhs = std::make_shared<ipi_t>(var,typ->rename(index,ren),res);
+    SOLVE(ren.dom)
+}
 void value_t::unify_RIG(std::size_t, std::size_t, spine_t&) {
     std::stringstream ss("");
     ss << "Unification error: rigid mismatch between VRIGID and " << *this;
@@ -423,7 +584,12 @@ void vrig_t::unify_RIG(std::size_t l, std::size_t m, spine_t& spine1) {
 }
 void vabs_t::unify_RIG(std::size_t l, std::size_t m, spine_t& spine) {
     VTCAPP
-    spine.push_back(VARL);
+    spine.push_back(std::make_pair(VARL,false));
+    val->unify_RIG(l+1,m,spine);
+}
+void viabs_t::unify_RIG(std::size_t l, std::size_t m, spine_t& spine) {
+    VTCAPP
+    spine.push_back(std::make_pair(VARL,true));
     val->unify_RIG(l+1,m,spine);
 }
 void vflex_t::unify_RIG(std::size_t l, std::size_t level, spine_t& spine1) {
@@ -456,6 +622,23 @@ void vflex_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine1) {
 }
 void vabs_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine) {
     VTCAPP
-    spine.push_back(VARL);
+    spine.push_back(std::make_pair(VARL,false));
     val->unify_FLEX(l+1,m,spine);
+}
+void viabs_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine) {
+    VTCAPP
+    spine.push_back(std::make_pair(VARL,true));
+    val->unify_FLEX(l+1,m,spine);
+}
+
+inferrance_t value_t::insert(context_t&,term_ptr term) {
+    return inferrance_t(term,shared_from_this());
+}
+inferrance_t vipi_t::insert(context_t& cont,term_ptr term) {
+    term_ptr m = FRESHMETA;
+    value_ptr a = m->eval(cont.environment);
+    cont.new_var(var,a);
+    TCAPP(a)
+    cont.pop(var);
+    return inferrance_t(std::make_shared<iapp_t>(term,m),val);
 }

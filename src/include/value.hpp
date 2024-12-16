@@ -14,7 +14,7 @@ struct value_t : std::enable_shared_from_this<value_t> {
     virtual ~value_t() {}
 
     virtual std::ostream& to_string(std::ostream&);
-    virtual value_ptr vApp(value_ptr);
+    virtual value_ptr vApp(value_ptr,bool);
     virtual term_ptr quote(std::size_t);
     virtual bool conv_VU(std::size_t);
     virtual bool conv_VVAR(std::size_t, std::size_t);
@@ -23,7 +23,12 @@ struct value_t : std::enable_shared_from_this<value_t> {
     virtual bool conv_VAPP(std::size_t, value_ptr, value_ptr);
     virtual bool conv(std::size_t, value_ptr);
     virtual term_ptr check_RABS(context_t&,name_t, raw_ptr);
+    virtual term_ptr check_RIABS(context_t&,name_t, raw_ptr);
+    virtual term_ptr check_RNABS(context_t&,name_t,name_t, raw_ptr);
+    virtual term_ptr check_LET(context_t&,name_t,raw_ptr,raw_ptr,raw_ptr);
+    virtual term_ptr check_HOLE(context_t&);
     virtual inferrance_t infer_RAPP(context_t&,term_ptr,raw_ptr);
+    virtual inferrance_t insert(context_t&,term_ptr);
     name_t val_in_ctx(context_t&);
     value_ptr vAppSp(spine_t&);
     virtual value_ptr clone();
@@ -33,8 +38,10 @@ struct value_t : std::enable_shared_from_this<value_t> {
     void solve(std::size_t,std::size_t,spine_t&);
     virtual void unify(std::size_t,value_ptr);
     virtual void unify_ABS(std::size_t,closure_t&);
+    virtual void unify_IABS(std::size_t,closure_t&);
     virtual void unify_U();
     virtual void unify_PI(std::size_t,name_t,value_ptr,closure_t&);
+    virtual void unify_IPI(std::size_t,name_t,value_ptr,closure_t&);
     virtual void unify_RIG(std::size_t,std::size_t,spine_t&);
     virtual void unify_FLEX(std::size_t,std::size_t,spine_t&);
 };
@@ -68,7 +75,7 @@ struct vabs_t : value_t {
     vabs_t(name_t& var, environment_t env, term_ptr term) : var {var}, body {closure_t(env,term)} {}
 
     std::ostream& to_string(std::ostream&);
-    value_ptr vApp(value_ptr);
+    value_ptr vApp(value_ptr,bool);
     term_ptr quote(std::size_t);
     bool conv_VU(std::size_t);
     bool conv_VVAR(std::size_t, std::size_t);
@@ -79,6 +86,19 @@ struct vabs_t : value_t {
     term_ptr rename(std::size_t,renaming_t&);
     void unify(std::size_t,value_ptr);
     void unify_ABS(std::size_t,closure_t&);
+    void unify_IABS(std::size_t,closure_t&);
+    void unify_RIG(std::size_t,std::size_t,spine_t&);
+    void unify_FLEX(std::size_t,std::size_t,spine_t&);
+};
+struct viabs_t : vabs_t {
+
+    viabs_t(name_t& var, closure_t& closure) : vabs_t(var,closure) {}
+    viabs_t(name_t& var, environment_t env, term_ptr term) : vabs_t(var,env,term) {}
+
+    std::ostream& to_string(std::ostream&);
+    term_ptr quote(std::size_t);
+    term_ptr rename(std::size_t,renaming_t&);
+    void unify(std::size_t,value_ptr);
     void unify_RIG(std::size_t,std::size_t,spine_t&);
     void unify_FLEX(std::size_t,std::size_t,spine_t&);
 };
@@ -134,6 +154,23 @@ struct vpi_t : value_t {
     void unify(std::size_t,value_ptr);
     void unify_PI(std::size_t,name_t,value_ptr,closure_t&);
 };
+struct vipi_t : vpi_t {
+
+    vipi_t(name_t& var, value_ptr typ, closure_t& closure) : vpi_t(var,typ,closure) {}
+    vipi_t(name_t& var, value_ptr typ, environment_t env, term_ptr term) : vpi_t(var,typ,env,term) {}
+
+    std::ostream& to_string(std::ostream&);
+    term_ptr quote(std::size_t);
+    value_ptr clone();
+    term_ptr rename(std::size_t,renaming_t&);
+    void unify_IPI(std::size_t,name_t,value_ptr,closure_t&);
+    term_ptr check_RIABS(context_t&,name_t, raw_ptr);
+    term_ptr check_RABS(context_t&,name_t, raw_ptr);
+    term_ptr check_RNABS(context_t&,name_t,name_t, raw_ptr);
+    term_ptr check_LET(context_t&,name_t,raw_ptr,raw_ptr,raw_ptr);
+    term_ptr check_HOLE(context_t&);
+    inferrance_t insert(context_t&,term_ptr);
+};
 
 struct vflex_t : value_t {
     std::size_t index;
@@ -143,7 +180,7 @@ struct vflex_t : value_t {
     vflex_t(std::size_t index, spine_t& spine) : index {index}, spine {spine} {}
     std::ostream& to_string(std::ostream&);
     term_ptr quote(std::size_t);
-    value_ptr vApp(value_ptr);
+    value_ptr vApp(value_ptr,bool);
     value_ptr clone();
     value_ptr force();
     term_ptr rename(std::size_t,renaming_t&);
@@ -151,6 +188,7 @@ struct vflex_t : value_t {
     void unify_FLEX(std::size_t,std::size_t,spine_t&);
     void unify_U();
     void unify_PI(std::size_t,name_t,value_ptr,closure_t&);
+    void unify_IPI(std::size_t,name_t,value_ptr,closure_t&);
     void unify_RIG(std::size_t,std::size_t,spine_t&);
 };
 
@@ -162,7 +200,7 @@ struct vrig_t : value_t {
     vrig_t(std::size_t level, spine_t& spine) : level {level}, spine {spine} {}
     std::ostream& to_string(std::ostream&);
     term_ptr quote(std::size_t);
-    value_ptr vApp(value_ptr);
+    value_ptr vApp(value_ptr,bool);
     value_ptr clone();
     std::size_t inverse();
     term_ptr rename(std::size_t,renaming_t&);

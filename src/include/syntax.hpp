@@ -3,7 +3,7 @@
 #include "metavar.hpp"
 
 
-struct term_t {
+struct term_t : std::enable_shared_from_this<term_t> {
 
     virtual ~term_t() {}
 
@@ -12,6 +12,7 @@ struct term_t {
     term_ptr nf(environment_t&);
     raw_ptr display();
     virtual raw_ptr display_rec(names_t&);
+    virtual inferrance_t insert(context_t&,value_ptr);
 
 };
 
@@ -38,6 +39,14 @@ struct abs_t : term_t {
     value_ptr eval(environment_t&);
     raw_ptr display_rec(names_t&);
 };
+struct iabs_t : abs_t {
+
+    iabs_t(name_t var, term_ptr body) : abs_t(var,body) {}
+    std::ostream& to_string(std::ostream&);
+    value_ptr eval(environment_t&);
+    raw_ptr display_rec(names_t&);
+    inferrance_t insert(context_t&,value_ptr);
+};
 
 struct app_t : term_t {
     term_ptr left;
@@ -46,6 +55,13 @@ struct app_t : term_t {
     app_t(term_ptr left,term_ptr right) : left {left}, right {right} {}
     app_t() {}
 
+    std::ostream& to_string(std::ostream&);
+    value_ptr eval(environment_t&);
+    raw_ptr display_rec(names_t&);
+};
+struct iapp_t : app_t {
+
+    iapp_t(term_ptr left, term_ptr right) : app_t(left,right) {}
     std::ostream& to_string(std::ostream&);
     value_ptr eval(environment_t&);
     raw_ptr display_rec(names_t&);
@@ -84,6 +100,13 @@ struct pi_t : term_t {
         term_ptr body) : 
         var {var}, typ {typ}, body {body} {}
         
+    std::ostream& to_string(std::ostream&);
+    value_ptr eval(environment_t&);
+    raw_ptr display_rec(names_t&);
+};
+struct ipi_t : pi_t {
+
+    ipi_t(name_t var, term_ptr typ, term_ptr body) : pi_t(var,typ,body) {}
     std::ostream& to_string(std::ostream&);
     value_ptr eval(environment_t&);
     raw_ptr display_rec(names_t&);
