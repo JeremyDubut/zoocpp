@@ -1,0 +1,9 @@
+Parsed term: 
+Let Bool : 𝒰 = (B : 𝒰) → (_ : B) → (_ : B) → B in
+Let true : Bool = λB λt λf t in
+Let false : Bool = λB λt λf f in
+Let not : (_ : Bool) → Bool = λb λB λt λf (((b B) f) t) in
+not
+=================
+Inferred type: (_ : (B : 𝒰) → (_ : B) → (_ : B) → B) → (B : 𝒰) → (_ : B) → (_ : B) → B
+Normal form: λb λB λt λf (((Var3 Var2) Var0) Var1)

@@ -1,0 +1,37 @@
+Parsed term: 
+Let id : {A : 𝒰} → (_ : A) → A = λx x in
+Let const : {A : ?_} → {B : ?_} → (_ : A) → (_ : B) → A = λx λy x in
+Let group1 : {A : 𝒰} → {B : 𝒰} → (x : A) → (y : A) → (z : A) → (_ : B) → B = λx λy λz λb b in
+Let group2 : {A : ?_} → {B : ?_} → (x : A) → (y : A) → (z : A) → (_ : B) → B = λx λy λz λb b in
+Let the : (A : ?_) → (_ : A) → A = λ_ λx x in
+Let argTest1 : ?_ = (((const {𝒰}) {𝒰}) 𝒰) in
+Let argTest2 : ?_ = ((const {B=𝒰}) 𝒰) in
+Let id2 : {A : ?_} → (_ : A) → A = λ{A} λx x in
+Let namedLam : {A : ?_} → {B : ?_} → {C : ?_} → (_ : A) → (_ : B) → (_ : C) → A = λ{B=B} λa λb λc a in
+Let namedLam2 : {A : ?_} → {B : ?_} → {C : ?_} → (_ : A) → (_ : B) → (_ : C) → A = λ{X=B} λa λb λc a in
+Let namedLam2 : {A : ?_} → {B : ?_} → {C : ?_} → (_ : A) → (_ : B) → (_ : C) → A = λ{X=C} λa λb λc a in
+Let insert : {A : ?_} → (_ : A) → A = id in
+Let noinsert : ?_ = λ{A} λx ((the A) x) in
+Let insert2 : ?_ = (λ{A} λx ((the A) x) 𝒰) in
+Let Bool : 𝒰 = (B : ?_) → (_ : B) → (_ : B) → B in
+Let true : Bool = λB λt λf t in
+Let false : Bool = λB λt λf f in
+Let not : (_ : Bool) → Bool = λb λB λt λf (((b B) f) t) in
+Let List : (_ : 𝒰) → 𝒰 = λA (L : ?_) → (_ : (_ : A) → (_ : L) → L) → (_ : L) → L in
+Let nil : {A : ?_} → (List A) = λL λcons λnil nil in
+Let cons : {A : ?_} → (_ : A) → (_ : (List A)) → (List A) = λx λxs λL λcons λnil ((cons x) (((xs L) cons) nil)) in
+Let map : {A : ?_} → {B : ?_} → (_ : (_ : A) → B) → (_ : (List A)) → (List B) = λ{A} λ{B} λf λxs λL λc λn (((xs L) λa (c (f a))) n) in
+Let list1 : (List Bool) = ((cons true) ((cons false) ((cons true) nil))) in
+Let comp : {A : ?_} → {B : (_ : A) → 𝒰} → {C : {a : ?_} → (_ : (B a)) → 𝒰} → (f : {a : ?_} → (b : (B a)) → (C b)) → (g : (a : A) → (B a)) → (a : A) → (C (g a)) = λf λg λa (f (g a)) in
+Let compExample : ?_ = (((comp (cons true)) (cons false)) nil) in
+Let Nat : 𝒰 = (N : 𝒰) → (_ : (_ : N) → N) → (_ : N) → N in
+Let mul : (_ : Nat) → (_ : Nat) → Nat = λa λb λN λs λz (((a ?_) ((b ?_) s)) z) in
+Let ten : Nat = λN λs λz (s (s (s (s (s (s (s (s (s (s z)))))))))) in
+Let hundred : ?_ = ((mul ten) ten) in
+Let Eq : {A : ?_} → (_ : A) → (_ : A) → 𝒰 = λ{A} λx λy (P : (_ : A) → 𝒰) → (_ : (P x)) → (P y) in
+Let refl : {A : ?_} → {x : A} → ((Eq x) x) = λ_ λpx px in
+Let sym : {A : ?_} → {x : ?_} → {y : ?_} → (_ : (((Eq {A}) x) y)) → ((Eq y) x) = λ{A} λ{x} λ{y} λp ((p λy ((Eq y) x)) refl) in
+((the ((Eq ((mul ten) ten)) hundred)) refl)
+=================
+Inferred type: (P : (_ : (N : 𝒰) → (_ : (_ : N) → N) → (_ : N) → N) → 𝒰) → (_ : (P λN λs λz (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s z)))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))) → (P λN λs λz (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s (s z)))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))
+Normal form: λ_ λpx Var0

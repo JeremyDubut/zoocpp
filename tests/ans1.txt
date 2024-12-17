@@ -1,0 +1,7 @@
+Parsed term: 
+Let id : (A : 𝒰) → (_ : A) → A = λA λx x in
+Let const : (A : 𝒰) → (B : 𝒰) → (_ : A) → (_ : B) → A = λA λB λx λy x in
+((id (A : 𝒰) → (B : 𝒰) → (_ : A) → (_ : B) → A) const)
+=================
+Inferred type: (A : 𝒰) → (B : 𝒰) → (_ : A) → (_ : B) → A
+Normal form: λA λB λx λy Var1

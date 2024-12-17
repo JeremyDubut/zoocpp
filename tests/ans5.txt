@@ -1,0 +1,31 @@
+Parsed term: 
+Let id : (A : 𝒰) → (_ : A) → A = λA λx x in
+Let id : (A : ?_) → (_ : A) → A = λA λx x in
+Let List : (_ : 𝒰) → 𝒰 = λA (L : ?_) → (_ : (_ : A) → (_ : L) → L) → (_ : L) → L in
+Let nil : (A : ?_) → (List A) = λA λL λcons λnil nil in
+Let cons : (A : ?_) → (_ : A) → (_ : (List A)) → (List A) = λA λx λxs λL λcons λnil ((cons x) (((xs ?_) cons) nil)) in
+Let End : 𝒰 = (A : 𝒰) → (_ : A) → A in
+Let zeroce : (_ : End) → End = λf λA λx x in
+Let once : (_ : End) → End = λf λA λx ((f A) x) in
+Let twice : (_ : End) → End = λf λA λx ((f ?_) ((f ?_) x)) in
+Let Bool : 𝒰 = (B : ?_) → (_ : B) → (_ : B) → B in
+Let true : Bool = λB λt λf t in
+Let false : Bool = λB λt λf f in
+Let not : (_ : Bool) → Bool = λb λB λt λf (((b B) f) t) in
+Let list1 : (List Bool) = (((cons Bool) true) (nil ?_)) in
+Let list2 : (List Bool) = (((cons ?_) ((id ?_) true)) (nil ?_)) in
+Let list3 : (List Bool) = (((cons Bool) true) (((cons Bool) false) (nil ?_))) in
+Let Eq : (A : ?_) → (_ : A) → (_ : A) → 𝒰 = λA λx λy (P : (_ : A) → 𝒰) → (_ : (P x)) → (P y) in
+Let refl : (A : ?_) → (x : A) → (((Eq A) x) x) = λA λx λP λpx px in
+Let Nat : 𝒰 = (N : 𝒰) → (_ : (_ : N) → N) → (_ : N) → N in
+Let five : Nat = λN λs λz (s (s (s (s (s z))))) in
+Let add : (_ : Nat) → (_ : Nat) → Nat = λa λb λN λs λz (((a N) s) (((b N) s) z)) in
+Let mul : (_ : Nat) → (_ : Nat) → Nat = λa λb λN λs λz (((a N) ((b N) s)) z) in
+Let ten : Nat = ((add five) five) in
+Let hundred : Nat = ((mul ten) ten) in
+Let thousand : Nat = ((mul ten) hundred) in
+Let eqTest : (((Eq Nat) hundred) hundred) = ((refl ?_) ?_) in
+𝒰
+=================
+Inferred type: 𝒰
+Normal form: 𝒰
