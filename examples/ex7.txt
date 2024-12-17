@@ -110,4 +110,4 @@ let refl : {A}{x : A} -> Eq x x
 let sym : {A x y} -> Eq {A} x y -> Eq y x -- parser gives an error here, not expecting {A} but something like {A=B}
   = λ {A}{x}{y} p. p (λ y. Eq y x) refl;
 
-the (Eq (mul ten ten) hundred) refl
+the (Eq (mul ten ten) ten) refl --here type inferrance fails as expected

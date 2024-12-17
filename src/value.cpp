@@ -79,16 +79,22 @@ std::ostream& vapp_t::to_string(std::ostream& out) {return out << "(" << *left <
 std::ostream& vu_t::to_string(std::ostream& out) {return out << "𝒰";}
 std::ostream& vpi_t::to_string(std::ostream& out) {return out << "(" << var << " : " << *typ << ") → " << body;}
 std::ostream& vipi_t::to_string(std::ostream& out) {return out << "{" << var << " : " << *typ << "} → " << body;}
-std::ostream& vflex_t::to_string(std::ostream& out) {return out << "??" << index;}
+std::ostream& vflex_t::to_string(std::ostream& out) {
+    out << "??" << index << " [";
+    for (auto it : spine) {
+        out << *it.first <<" ;";
+    }
+    return out << "]";
+}
 std::ostream& vrig_t::to_string(std::ostream& out) {return out << "?" << level;}
 
 std::ostream& operator<< (std::ostream& out, const environment_t& env) {
     std::size_t com = 0;
     out << "[";
-    // for (auto it = env.begin(); it != env.end(); it++) {
-    //     out << ((com==0)? "": ", ") << com << " => " << **it;
-    //     com++;
-    // }
+    for (auto it = env.begin(); it != env.end(); it++) {
+        out << ((com==0)? "": ", ") << com << " => " << **it;
+        com++;
+    }
     return out << "]";
 }
 
@@ -246,6 +252,7 @@ term_ptr value_t::check_RABS(context_t& cont,name_t var, raw_ptr body) {
     inferrance_t inf = body->infer(cont);
     cont.pop(var);
     closure_t clos = closure_t(cont.environment,inf.typ->quote(cont.level+1));
+    // std::cout << "Starting unification of " << *this << " with " << *std::make_shared<vpi_t>(var,a,clos) << std::endl;
     unify(cont.level,std::make_shared<vpi_t>(var,a,clos));
     return std::make_shared<abs_t>(var,inf.term);
 }
@@ -275,6 +282,7 @@ term_ptr value_t::check_RIABS(context_t& cont,name_t var, raw_ptr body) {
     inferrance_t inf = body->infer(cont);
     cont.pop(var);
     closure_t clos = closure_t(cont.environment,inf.typ->quote(cont.level+1));
+    // std::cout << "Starting unification of " << *this << " with " << *std::make_shared<vipi_t>(var,a,clos) << std::endl;
     unify(cont.level,std::make_shared<vipi_t>(var,a,clos));
     return std::make_shared<iabs_t>(var,inf.term);
 }
@@ -294,6 +302,7 @@ term_ptr value_t::check_RNABS(context_t& cont,name_t var, name_t, raw_ptr body) 
     inferrance_t inf = body->infer(cont);
     cont.pop(var);
     closure_t clos = closure_t(cont.environment,inf.typ->quote(cont.level+1));
+    // std::cout << "Starting unification of " << *this << " with " << *std::make_shared<vipi_t>(var,a,clos) << std::endl;
     unify(cont.level,std::make_shared<vipi_t>(var,a,clos));
     return std::make_shared<iabs_t>(var,inf.term);
 }
@@ -358,6 +367,7 @@ term_ptr vipi_t::check_HOLE(context_t& cont) {
 term_ptr value_t::check_RAW(context_t& cont,raw_ptr r) {
     inferrance_t inf = r->infer(cont);
     inf = inf.term->insert(cont,inf.typ);
+    // std::cout << "Starting unification of " << *this << " with " << *inf.typ << std::endl;
     unify(cont.level,inf.typ);
     return inf.term;
 }
@@ -378,6 +388,7 @@ std::pair<value_ptr,closure_t> value_t::infer_RAPP(context_t& cont) {
     cont.new_var(var,a);
     closure_t body = closure_t(cont.environment,FRESHMETA);
     cont.pop(var);
+    // std::cout << "Starting unification of " << *this << " with " << *std::make_shared<vpi_t>(var,a,body) << std::endl;
     unify(cont.level,std::make_shared<vpi_t>(var,a,body));
     return std::make_pair(a,body);
 
@@ -387,7 +398,7 @@ std::pair<value_ptr,closure_t> vpi_t::infer_RAPP(context_t&) {
     return std::make_pair(typ,body);
 }
 std::pair<value_ptr,closure_t> vipi_t::infer_RAPP(context_t&) {
-    std::cout << "Inferring function type " << *this << std::endl;
+    // std::cout << "Inferring function type " << *this << std::endl;
     throw "Icit mismatch Explicit Implicit";
 }
 
@@ -399,6 +410,7 @@ std::pair<value_ptr,closure_t> value_t::infer_RINAPP(context_t& cont) {
     cont.new_var(var,a);
     closure_t body = closure_t(cont.environment,FRESHMETA);
     cont.pop(var);
+    // std::cout << "Starting unification of " << *this << " with " << *std::make_shared<vpi_t>(var,a,body) << std::endl;
     unify(cont.level,std::make_shared<vipi_t>(var,a,body));
     return std::make_pair(a,body);
 
@@ -516,19 +528,27 @@ void value_t::unify(std::size_t,value_ptr) {
     throw ss.str();
 }
 void vabs_t::unify(std::size_t l,value_ptr v) {
+    // std::cout << "Unifying Lam " << *this->quote(0) << " with " << *v->quote(0) << std::endl;  
     v->unify_ABS(l,body);
+    // std::cout << "Unification of Lam " << *this->quote(0) << " with " << *v->quote(0) << " successful" << std::endl;
 }
 void viabs_t::unify(std::size_t l,value_ptr v) {
+    // std::cout << "Unifying Implicitl Lam " << *this->quote(0) << " with " << *v->quote(0)<< std::endl; 
     v->unify_IABS(l,body);
+    // std::cout << "Unification of Implicit Lam " << *this->quote(0) << " with " << *v->quote(0) << " successful" << std::endl;
 }
 void vu_t::unify(std::size_t,value_ptr v) {
     v->unify_U();
 }
 void vpi_t::unify(std::size_t l,value_ptr v) {
+    // std::cout << "Unifying Pi " << *this->quote(0) << " with " << *v->quote(0) << std::endl; 
     v->unify_PI(l,var,typ,body);
+    // std::cout << "Unification of Pi " << *this->quote(0) << " with " << *v->quote(0) << " successful" << std::endl;
 }
 void vipi_t::unify(std::size_t l,value_ptr v) {
+    // std::cout << "Unifying Implicit Pi " << *this->quote(0) << " with " << *v->quote(0) << std::endl; 
     v->unify_IPI(l,var,typ,body);
+    // std::cout << "Unification of Implicit Pi " << *this->quote(0) << " with " << *v->quote(0) << " successful" << std::endl;
 }
 void vrig_t::unify(std::size_t l,value_ptr v) {
     v->unify_RIG(l,level,spine);
@@ -540,7 +560,7 @@ void vflex_t::unify(std::size_t l,value_ptr v) {
 void value_t::unify_ABS(std::size_t l ,closure_t& body) {
     // // std::cout << "Unifying Lam " << body << " with term " << *this << std::endl;
     VCAPP(body,val)
-    val->unify(l+1,vApp(VARL,false));
+    val->force()->unify(l+1,vApp(VARL,false)->force());
     // // std::cout << "Unification of Lam " << body << " with term " << *this << " successful" << std::endl;
 }
 // Since viabs_t inherits from vabs_t, the same applies
@@ -548,20 +568,20 @@ void vabs_t::unify_ABS(std::size_t l ,closure_t& body1) {
     // // std::cout << "Unifying Lam " << body << " with Lam " << *this << std::endl;
     VCAPP(body1,val1)
     VTCAPP
-    val1->unify(l+1,val);
+    val1->force()->unify(l+1,val->force());
     // // std::cout << "Unification of Lam " << body << " with Lam " << *this << " successful" << std::endl;
 }
 void value_t::unify_IABS(std::size_t l ,closure_t& body) {
     // // std::cout << "Unifying Lam " << body << " with term " << *this << std::endl;
     VCAPP(body,val)
-    val->unify(l+1,vApp(VARL,true));
+    val->force()->unify(l+1,vApp(VARL,true)->force());
     // // std::cout << "Unification of Lam " << body << " with term " << *this << " successful" << std::endl;
 }
 void vabs_t::unify_IABS(std::size_t l ,closure_t& body1) {
     // // std::cout << "Unifying Lam " << body << " with Lam " << *this << std::endl;
     VCAPP(body1,val1)
     VTCAPP
-    val1->unify(l+1,val);
+    val1->force()->unify(l+1,val->force());
     // // std::cout << "Unification of Lam " << body << " with Lam " << *this << " successful" << std::endl;
 }
 void value_t::unify_U() {
@@ -583,10 +603,10 @@ void value_t::unify_PI(std::size_t,name_t,value_ptr,closure_t&) {
     throw ss.str();
 }
 void vpi_t::unify_PI(std::size_t l,name_t,value_ptr typ1,closure_t& body1) {
-    typ1->unify(l,typ);
+    typ1->force()->unify(l,typ->force());
     VCAPP(body1,val1)
     VTCAPP
-    val1->unify(l+1,val);
+    val1->force()->unify(l+1,val->force());
 }
 void vipi_t::unify_PI(std::size_t,name_t,value_ptr,closure_t&) {
     throw "Unification error: icit mismatch in pi";
@@ -607,10 +627,10 @@ void value_t::unify_IPI(std::size_t,name_t,value_ptr,closure_t&) {
     throw ss.str();
 }
 void vipi_t::unify_IPI(std::size_t l,name_t,value_ptr typ1,closure_t& body1) {
-    typ1->unify(l,typ);
+    typ1->force()->unify(l,typ->force());
     VCAPP(body1,val1)
     VTCAPP
-    val1->unify(l+1,val);
+    val1->force()->unify(l+1,val->force());
 }
 void vflex_t::unify_IPI(std::size_t level, name_t var, value_ptr typ,closure_t& body) {
     renaming_t ren = renaming_t(level,spine);

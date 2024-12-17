@@ -39,11 +39,11 @@ int main(int argc, char* argv[])
         int res = parser();
 
         std::cout << "Parsed term: " << std::endl << *term << std::endl;
+        std::cout << "=================" << std::endl;
 
         context_t ctx = context_t();
         environment_t env = environment_t();
         inferrance_t inf = term->infer(ctx);
-        std::cout << "=================" << std::endl;
         std::cout << "Inferred type: " << *inf.typ->quote(0)->display() << std::endl;
         std::cout << "Normal form: " << *inf.term->nf(env) << std::endl;
 
