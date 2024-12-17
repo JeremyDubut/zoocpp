@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
     catch (std::string e) {
         std::cout << "Error: " << e << std::endl;
     }
-    catch (std::out_of_range e) {
+    catch (std::out_of_range const& e) {
         std::cout << "Out of range: " << e.what() << std::endl;
     }
 }
