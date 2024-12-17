@@ -9,4 +9,4 @@ target_link_libraries(test_suite
 )
 
 # Add tests to CTest
-add_test(NAME ProgramTests COMMAND test_suite)
+add_test(NAME ElaborationTests COMMAND test_suite)

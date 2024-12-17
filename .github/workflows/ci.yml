@@ -1,0 +1,40 @@
+name: C++ CI with Google Test
+
+on:
+  push:
+    branches:
+      - main    # Run on pushes to the main branch
+  pull_request:
+    branches:
+      - main    # Run on PRs targeting the main branch
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest  # Use the latest Ubuntu runner
+
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Install required dependencies
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ gcc flex bison
+
+      # Step 3: Configure CMake
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      # Step 4: Build the project
+      - name: Build the project
+        run: |
+          cmake --build build --config Release
+
+      # Step 5: Run tests with ctest
+      - name: Run Google Tests
+        working-directory: build
+        run: |
+          ctest --output-on-failure
