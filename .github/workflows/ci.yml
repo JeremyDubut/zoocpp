@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake g++ gcc flex bison
+          sudo apt-get install -y cmake g++ gcc flex libfl-dev bison
 
       # Step 3: Configure CMake
       - name: Configure CMake
