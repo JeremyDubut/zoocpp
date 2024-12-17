@@ -74,6 +74,7 @@ value_ptr imeta_t::eval(environment_t& env) {
             }
             ite++;
         }
+        // std::cout << "Result " << *res << std::endl;
         return res;
     }
 }

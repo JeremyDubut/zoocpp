@@ -79,7 +79,7 @@ std::ostream& vapp_t::to_string(std::ostream& out) {return out << "(" << *left <
 std::ostream& vu_t::to_string(std::ostream& out) {return out << "𝒰";}
 std::ostream& vpi_t::to_string(std::ostream& out) {return out << "(" << var << " : " << *typ << ") → " << body;}
 std::ostream& vipi_t::to_string(std::ostream& out) {return out << "{" << var << " : " << *typ << "} → " << body;}
-std::ostream& vflex_t::to_string(std::ostream& out) {return out << "?" << index;}
+std::ostream& vflex_t::to_string(std::ostream& out) {return out << "??" << index;}
 std::ostream& vrig_t::to_string(std::ostream& out) {return out << "?" << level;}
 
 std::ostream& operator<< (std::ostream& out, const environment_t& env) {
