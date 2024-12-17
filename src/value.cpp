@@ -85,10 +85,10 @@ std::ostream& vrig_t::to_string(std::ostream& out) {return out << "?" << level;}
 std::ostream& operator<< (std::ostream& out, const environment_t& env) {
     std::size_t com = 0;
     out << "[";
-    for (auto it = env.begin(); it != env.end(); it++) {
-        out << ((com==0)? "": ", ") << com << " => " << **it;
-        com++;
-    }
+    // for (auto it = env.begin(); it != env.end(); it++) {
+    //     out << ((com==0)? "": ", ") << com << " => " << **it;
+    //     com++;
+    // }
     return out << "]";
 }
 
@@ -355,6 +355,21 @@ term_ptr vipi_t::check_HOLE(context_t& cont) {
     return res;
 }
 
+term_ptr value_t::check_RAW(context_t& cont,raw_ptr r) {
+    inferrance_t inf = r->infer(cont);
+    inf = inf.term->insert(cont,inf.typ);
+    unify(cont.level,inf.typ);
+    return inf.term;
+}
+term_ptr vipi_t::check_RAW(context_t& cont,raw_ptr r) {
+    std::size_t l = cont.level;
+    VTCAPP
+    cont.new_bind(var,typ);
+    term_ptr res = r->check(cont,val);
+    cont.pop(var);
+    return std::make_shared<iabs_t>(var,res);
+}
+
 std::pair<value_ptr,closure_t> value_t::infer_RAPP(context_t& cont) {
     value_ptr a = FRESHMETA->eval(cont.environment);
     std::stringstream ss("");
@@ -372,8 +387,8 @@ std::pair<value_ptr,closure_t> vpi_t::infer_RAPP(context_t&) {
     return std::make_pair(typ,body);
 }
 std::pair<value_ptr,closure_t> vipi_t::infer_RAPP(context_t&) {
-    // // std::cout << "Inferring function type for " << *left << " with type " << *this << std::endl;
-    throw "Icit mismatch";
+    std::cout << "Inferring function type " << *this << std::endl;
+    throw "Icit mismatch Explicit Implicit";
 }
 
 std::pair<value_ptr,closure_t> value_t::infer_RINAPP(context_t& cont) {
@@ -394,7 +409,7 @@ std::pair<value_ptr,closure_t> vipi_t::infer_RINAPP(context_t&) {
 }
 std::pair<value_ptr,closure_t> vpi_t::infer_RINAPP(context_t&) {
     // // std::cout << "Inferring function type for " << *left << " with type " << *this << std::endl;
-    throw "Icit mismatch";
+    throw "Icit mismatch Implicit Explicit";
 }
 inferrance_t value_t::insertUntilName(context_t&,name_t,term_ptr) {
     throw "No named implicit argument";
@@ -512,6 +527,9 @@ void vu_t::unify(std::size_t,value_ptr v) {
 void vpi_t::unify(std::size_t l,value_ptr v) {
     v->unify_PI(l,var,typ,body);
 }
+void vipi_t::unify(std::size_t l,value_ptr v) {
+    v->unify_IPI(l,var,typ,body);
+}
 void vrig_t::unify(std::size_t l,value_ptr v) {
     v->unify_RIG(l,level,spine);
 }
@@ -525,6 +543,7 @@ void value_t::unify_ABS(std::size_t l ,closure_t& body) {
     val->unify(l+1,vApp(VARL,false));
     // // std::cout << "Unification of Lam " << body << " with term " << *this << " successful" << std::endl;
 }
+// Since viabs_t inherits from vabs_t, the same applies
 void vabs_t::unify_ABS(std::size_t l ,closure_t& body1) {
     // // std::cout << "Unifying Lam " << body << " with Lam " << *this << std::endl;
     VCAPP(body1,val1)
@@ -551,6 +570,7 @@ void value_t::unify_U() {
     throw ss.str();
 }
 void vu_t::unify_U() {}
+// The case vabs_t is necessarily an error because vApp is not define on U
 void vflex_t::unify_U() {
     // // std::cout << "Unifying U with flex " << *this << std::endl;
     term_ptr trhs = std::make_shared<u_t>();
@@ -567,6 +587,9 @@ void vpi_t::unify_PI(std::size_t l,name_t,value_ptr typ1,closure_t& body1) {
     VCAPP(body1,val1)
     VTCAPP
     val1->unify(l+1,val);
+}
+void vipi_t::unify_PI(std::size_t,name_t,value_ptr,closure_t&) {
+    throw "Unification error: icit mismatch in pi";
 }
 void vflex_t::unify_PI(std::size_t level, name_t var, value_ptr typ,closure_t& body) {
     renaming_t ren = renaming_t(level,spine);
@@ -672,5 +695,5 @@ inferrance_t vipi_t::insert(context_t& cont,term_ptr term) {
     cont.new_var(var,a);
     TCAPP(a)
     cont.pop(var);
-    return inferrance_t(std::make_shared<iapp_t>(term,m),val);
+    return val->insert(cont,std::make_shared<iapp_t>(term,m));
 }

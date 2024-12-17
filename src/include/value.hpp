@@ -25,6 +25,7 @@ struct value_t : std::enable_shared_from_this<value_t> {
     virtual term_ptr check_RABS(context_t&,name_t, raw_ptr);
     virtual term_ptr check_RIABS(context_t&,name_t, raw_ptr);
     virtual term_ptr check_RNABS(context_t&,name_t,name_t, raw_ptr);
+    virtual term_ptr check_RAW(context_t&,raw_ptr);
     virtual term_ptr check_LET(context_t&,name_t,raw_ptr,raw_ptr,raw_ptr);
     virtual term_ptr check_HOLE(context_t&);
     virtual std::pair<value_ptr,closure_t> infer_RAPP(context_t&);
@@ -169,12 +170,15 @@ struct vipi_t : vpi_t {
     inferrance_t insertUntilName(context_t&,name_t,term_ptr);
     value_ptr clone();
     term_ptr rename(std::size_t,renaming_t&);
+    void unify(std::size_t,value_ptr);
+    void unify_PI(std::size_t,name_t,value_ptr,closure_t&);
     void unify_IPI(std::size_t,name_t,value_ptr,closure_t&);
     term_ptr check_RIABS(context_t&,name_t, raw_ptr);
     term_ptr check_RABS(context_t&,name_t, raw_ptr);
     term_ptr check_RNABS(context_t&,name_t,name_t, raw_ptr);
     term_ptr check_LET(context_t&,name_t,raw_ptr,raw_ptr,raw_ptr);
     term_ptr check_HOLE(context_t&);
+    term_ptr check_RAW(context_t&,raw_ptr);
     inferrance_t insert(context_t&,term_ptr);
 };
 
