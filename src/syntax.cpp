@@ -3,7 +3,7 @@
 #include "rsyntax.hpp"
 
 #define VMETA(n) \
-    metavar_t::lookup(n).value_or(std::make_shared<vflex_t>(n))->clone()
+    metavar_t::lookup(n).get_value(n)->clone()
 
 std::ostream& term_t::to_string(std::ostream& out) {return out << "Unknown term";}
 std::ostream& var_t::to_string(std::ostream& out) {return out << "Var" << index;}
@@ -84,7 +84,8 @@ value_ptr appp_t::eval(environment_t& env) {
         for (pruning_t itf : prune) {
             switch (itf) {
                 case Implicit: res = res->vApp(*ite,true); break;
-                case Explicit: res = res->vApp(*ite,true); break;
+                case Explicit: res = res->vApp(*ite,false); break;
+                case None: break;
             }
             ite++;
         }

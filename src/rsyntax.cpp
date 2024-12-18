@@ -105,7 +105,7 @@ inferrance_t raw_t::infer(context_t&){
 }
 inferrance_t rabs_t::infer(context_t& cont){
     LOG("Inferring Explicit Lam" << *this);
-    value_ptr a = FRESHMETA->eval(cont.environment);
+    value_ptr a = FRESHMETA(VU)->eval(cont.environment); // Type of FM
     cont.new_var(var,a);
     inferrance_t inf = body->infer(cont);
     inf = inf.term->insert(cont,inf.typ);
@@ -210,9 +210,9 @@ inferrance_t rlet_t::infer(context_t& cont) {
 }
 inferrance_t rhole_t::infer(context_t& cont) {
     LOG("Inferring hole");
-    value_ptr a = FRESHMETA->eval(cont.environment);
+    value_ptr a = FRESHMETA(VU)->eval(cont.environment);
     LOG("Inferrance of hole successfule, inferred with type " << *a);
-    return inferrance_t(FRESHMETA,a);
+    return inferrance_t(FRESHMETA(a),a);
 }
 
 

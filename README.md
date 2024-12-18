@@ -22,7 +22,7 @@ The first time, everytime you modify the CMakeLists.txt files, or when you remov
 
 `<build_type>` can be:
 - `Debug` if you want to modify the source, to get access to debug logs;
-- `Release` when you are only interested to run examples and tests.
+- `Release` when you are only interested in running examples and tests.
 
 Everytime you change a source file:
 
@@ -50,4 +50,4 @@ If the tests are ok, you would get something like the following:
 # What is not working:
 - I can't figure out how to parse named implicit arguments properly
     - temporary fix: the syntax is {! X = Term } to tell the parser explicitly about them
-- When building, you may get a warning about a comparison of integers of different signs from the .cc file generated file by flex. This happens at least with `clang` on MacOS. This is harmless.
+- When building, you may get a warning about a comparison of integers of different signs from the .cc generated file by flex. This happens at least with `clang` on MacOS. This is harmless.

@@ -32,6 +32,7 @@ struct pibinder_t;
 struct icit;
 struct arg_t;
 struct locals_t;
+struct metaentry_t;
 
 // We decided to use share pointers because terms are shared during 
 // evaluation and inferrance through spines and environments
@@ -50,7 +51,6 @@ typedef std::unordered_map<std::string,std::vector<type_t>> types_t;
 typedef std::vector<value_ptr> environment_t;
 typedef std::string name_t;
 typedef std::vector<name_t> names_t;
-typedef std::optional<value_ptr> metaentry_t;
 typedef std::vector<metaentry_t> metadata_t;
 typedef std::vector<bool> flags_t;
 typedef std::vector<std::pair<value_ptr,bool>> spine_t;
@@ -59,7 +59,7 @@ enum pruning_t { Implicit, Explicit, None };
 typedef std::vector<pruning_t> prunings_t;
 
 // some common macros
-#define FRESHMETA std::make_shared<imeta_t>(cont.flags)
+#define FRESHMETA(typ) std::make_shared<imeta_t>(typ,cont.flags)
 #define VU std::make_shared<vu_t>()
 #define CAPP(v,body,val) \
     body.environment.push_back(v); \

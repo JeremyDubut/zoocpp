@@ -47,7 +47,8 @@
         i++; \
     } \
     value_ptr solution = trhs->eval(env); \
-    metavar_t::lookupTable[index] = solution; 
+    metaentry_t me = metavar_t::lookup(index).update(solution); \
+    metavar_t::lookupTable[index] = me; 
 #define RENAMEABS(t) \
     std::size_t l = ren.cod; \
     VTCAPP; \
@@ -155,7 +156,7 @@ term_ptr vrig_t::quote(std::size_t l) {
 }
 
 term_ptr value_t::check_RABS(context_t& cont,name_t var, raw_ptr body) {
-    value_ptr a = FRESHMETA->eval(cont.environment);
+    value_ptr a = FRESHMETA(VU)->eval(cont.environment); // Type of FM
     cont.new_var(var,a);
     inferrance_t inf = body->infer(cont);
     cont.pop(var);
@@ -178,7 +179,7 @@ term_ptr vipi_t::check_RABS(context_t& cont,name_t var, raw_ptr r) {
     return res;
 }
 term_ptr value_t::check_RIABS(context_t& cont,name_t var, raw_ptr body) {
-    value_ptr a = FRESHMETA->eval(cont.environment);
+    value_ptr a = FRESHMETA(VU)->eval(cont.environment); // Type of FM
     cont.new_var(var,a);
     inferrance_t inf = body->infer(cont);
     cont.pop(var);
@@ -194,7 +195,7 @@ term_ptr vipi_t::check_RIABS(context_t& cont,name_t var, raw_ptr r) {
     return res;
 }
 term_ptr value_t::check_RNABS(context_t& cont,name_t var, name_t, raw_ptr body) {
-    value_ptr a = FRESHMETA->eval(cont.environment);
+    value_ptr a = FRESHMETA(VU)->eval(cont.environment); // Type of FM
     cont.new_var(var,a);
     inferrance_t inf = body->infer(cont);
     cont.pop(var);
@@ -239,7 +240,7 @@ term_ptr vipi_t::check_LET(context_t& cont,name_t var,raw_ptr typ,raw_ptr def,ra
 }
 
 term_ptr value_t::check_HOLE(context_t& cont) {
-    term_ptr res = FRESHMETA;
+    term_ptr res = FRESHMETA(shared_from_this()); // Type of FM
     return res;
 }
 term_ptr vipi_t::check_HOLE(context_t& cont) {
@@ -266,12 +267,12 @@ term_ptr vipi_t::check_RAW(context_t& cont,raw_ptr r) {
 }
 
 std::pair<value_ptr,closure_t> value_t::infer_RAPP(context_t& cont) {
-    value_ptr a = FRESHMETA->eval(cont.environment);
+    value_ptr a = FRESHMETA(VU)->eval(cont.environment); // Type of FM
     std::stringstream ss("");
     ss << "x" << this;
     name_t var = ss.str();
     cont.new_var(var,a);
-    closure_t body = closure_t(cont.environment,FRESHMETA);
+    closure_t body = closure_t(cont.environment,FRESHMETA(VU)); // Type of FM
     cont.pop(var);
     unify(cont.level,std::make_shared<vpi_t>(var,a,body));
     return std::make_pair(a,body);
@@ -285,12 +286,12 @@ std::pair<value_ptr,closure_t> vipi_t::infer_RAPP(context_t&) {
 }
 
 std::pair<value_ptr,closure_t> value_t::infer_RINAPP(context_t& cont) {
-    value_ptr a = FRESHMETA->eval(cont.environment);
+    value_ptr a = FRESHMETA(VU)->eval(cont.environment); // Type of FM
     std::stringstream ss("");
     ss << "x" << this;
     name_t var = ss.str();
     cont.new_var(var,a);
-    closure_t body = closure_t(cont.environment,FRESHMETA);
+    closure_t body = closure_t(cont.environment,FRESHMETA(VU)); // Type of FM
     cont.pop(var);
     unify(cont.level,std::make_shared<vipi_t>(var,a,body));
     return std::make_pair(a,body);
@@ -310,7 +311,7 @@ inferrance_t vipi_t::insertUntilName(context_t& cont,name_t ivar,term_ptr lterm)
         return inferrance_t(lterm,shared_from_this());
     }
     else {
-        term_ptr m = FRESHMETA;
+        term_ptr m = FRESHMETA(typ); // Type of FM
         value_ptr mv = m->eval(cont.environment);
         TCAPP(mv)
         return inferrance_t(std::make_shared<iapp_t>(lterm,m),val);
@@ -337,11 +338,12 @@ value_ptr value_t::force() {
     return shared_from_this();
 }
 value_ptr vflex_t::force() {
-    metaentry_t entry = metavar_t::lookup(index);
-    if (entry.has_value()) {
-        return entry.value()->clone()->vAppSp(spine)->force();
-    }
-    return shared_from_this();
+    return metavar_t::lookup(index).get_value(shared_from_this(),spine);
+    // metaentry_t entry = metavar_t::lookup(index);
+    // if (entry.has_value()) {
+    //     return entry.value()->clone()->vAppSp(spine)->force();
+    // }
+    // return shared_from_this();
 }
 
 std::size_t value_t::inverse() {
@@ -575,7 +577,7 @@ inferrance_t value_t::insert(context_t&,term_ptr term) {
     return inferrance_t(term,shared_from_this());
 }
 inferrance_t vipi_t::insert(context_t& cont,term_ptr term) {
-    term_ptr m = FRESHMETA;
+    term_ptr m = FRESHMETA(typ); // Type of FM
     value_ptr a = m->eval(cont.environment);
     cont.new_var(var,a);
     TCAPP(a)

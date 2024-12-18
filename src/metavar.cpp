@@ -3,6 +3,20 @@
 #include <iostream>
 #include "value.hpp"
 
+value_ptr metaentry_t::get_value(value_ptr v, spine_t&) {return v;}
+value_ptr solvedmeta_t::get_value(value_ptr, spine_t& spine) {
+    return sol->clone()->vAppSp(spine)->force();
+}
+value_ptr metaentry_t::get_value(std::size_t index) {return std::make_shared<vflex_t>(index);}
+value_ptr solvedmeta_t::get_value(std::size_t) {return sol;}
+
+metaentry_t metaentry_t::update(value_ptr sol) {
+    return solvedmeta_t(typ,sol);
+}
+metaentry_t solvedmeta_t::update(value_ptr) {
+    throw "Unification error: trying to solve an already solved metavariable";
+}
+
 metadata_t metavar_t::lookupTable {};
 metaentry_t metavar_t::lookup(std::size_t i) {
     if (i < lookupTable.size()) {

@@ -160,7 +160,7 @@ struct meta_t : term_t {
 
     std::size_t index;
 
-    meta_t(): index {metavar_t().id} {}
+    meta_t(value_ptr typ): index {metavar_t(typ).id} {}
     meta_t(size_t index) : index {index} {}
     
     std::ostream& to_string(std::ostream&);
@@ -177,8 +177,8 @@ struct imeta_t : term_t {
     std::size_t index;
     flags_t flags;
 
-    imeta_t(flags_t& flags) : index {metavar_t().id}, flags {flags} {}
-    imeta_t() : index {metavar_t().id}, flags {flags_t()} {}
+    imeta_t(value_ptr typ, flags_t& flags) : index {metavar_t(typ).id}, flags {flags} {}
+    imeta_t(value_ptr typ) : index {metavar_t(typ).id}, flags {flags_t()} {}
     
     std::ostream& to_string(std::ostream&);
     value_ptr eval(environment_t&);
