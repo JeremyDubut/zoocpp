@@ -84,14 +84,7 @@ raw_ptr term_t::display_rec(names_t&) {
     throw "Display unknown value";
 }
 raw_ptr var_t::display_rec(names_t& names) {
-    if (names.size()-1-index >= 0) {
-        return std::make_shared<rvar_t>(names[names.size()-1-index]);
-    }
-    else {
-        std::stringstream ss("");
-        ss << "Display error: cannot access variable " << index;
-        throw ss.str();
-    }
+    return std::make_shared<rvar_t>(names[names.size()-1-index]);
 }
 raw_ptr abs_t::display_rec(names_t& names) {
     names.push_back(var);
