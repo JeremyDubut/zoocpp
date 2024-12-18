@@ -1,7 +1,12 @@
 #pragma once
+
+// Header file for values (basically, types)
+
 #include "common.hpp"
 
 
+// Output type of inferrance
+// Basically, a pair of a term and a type
 struct inferrance_t {
     term_ptr term;
     value_ptr typ;
@@ -9,36 +14,27 @@ struct inferrance_t {
     inferrance_t(term_ptr term, value_ptr typ) : term {term}, typ {typ} {}
 };
 
+// Values
 struct value_t : std::enable_shared_from_this<value_t> {
 
     virtual ~value_t() {}
 
+    // To print
     virtual std::ostream& to_string(std::ostream&);
-    virtual value_ptr vApp(value_ptr,bool);
+    raw_ptr display();
+    // Reification
     virtual term_ptr quote(std::size_t);
-    virtual bool conv_VU(std::size_t);
-    virtual bool conv_VVAR(std::size_t, std::size_t);
-    virtual bool conv_VPI(std::size_t, value_ptr, closure_t&);
-    virtual bool conv_VABS(std::size_t, closure_t&);
-    virtual bool conv_VAPP(std::size_t, value_ptr, value_ptr);
-    virtual bool conv(std::size_t, value_ptr);
+    // Cases for type checking
     virtual term_ptr check_RABS(context_t&,name_t, raw_ptr);
     virtual term_ptr check_RIABS(context_t&,name_t, raw_ptr);
     virtual term_ptr check_RNABS(context_t&,name_t,name_t, raw_ptr);
     virtual term_ptr check_RAW(context_t&,raw_ptr);
     virtual term_ptr check_LET(context_t&,name_t,raw_ptr,raw_ptr,raw_ptr);
     virtual term_ptr check_HOLE(context_t&);
+    // Cases for type inferrance
     virtual std::pair<value_ptr,closure_t> infer_RAPP(context_t&);
     virtual std::pair<value_ptr,closure_t> infer_RINAPP(context_t&);
-    virtual inferrance_t insertUntilName(context_t&,name_t,term_ptr);
-    virtual inferrance_t insert(context_t&,term_ptr);
-    name_t val_in_ctx(context_t&);
-    value_ptr vAppSp(spine_t&);
-    virtual value_ptr clone();
-    virtual value_ptr force();
-    virtual std::size_t inverse();
-    virtual term_ptr rename(std::size_t,renaming_t&);
-    void solve(std::size_t,std::size_t,spine_t&);
+    // Unification
     virtual void unify(std::size_t,value_ptr);
     virtual void unify_ABS(std::size_t,closure_t&);
     virtual void unify_IABS(std::size_t,closure_t&);
@@ -47,10 +43,34 @@ struct value_t : std::enable_shared_from_this<value_t> {
     virtual void unify_IPI(std::size_t,name_t,value_ptr,closure_t&);
     virtual void unify_RIG(std::size_t,std::size_t,spine_t&);
     virtual void unify_FLEX(std::size_t,std::size_t,spine_t&);
+    // Basically, beta reduction
+    virtual value_ptr vApp(value_ptr,bool);
+    value_ptr vAppSp(spine_t&);
+    // Helpers for elaboration
+    virtual inferrance_t insertUntilName(context_t&,name_t,term_ptr);
+    virtual inferrance_t insert(context_t&,term_ptr);
+    // Duplicate a value
+    // Values are shared in environments and lookpus
+    // Most behaviors are consumming
+    // Except for the beta reduction in metavariables
+    // Which just appends in the spine
+    // Duplication is then needed to avoid conflict between spines
+    // Another option would be to duplicate the spine everytime something is appended
+    virtual value_ptr clone();
+    // Forcing the evaluation of a flexible metavariable
+    virtual value_ptr force();
+    // Helpers for unification
+    virtual std::size_t inverse();
+    virtual term_ptr rename(std::size_t,renaming_t&);
+    void solve(std::size_t,std::size_t,spine_t&);
 };
 std::ostream& operator<< (std::ostream&, value_t&);
 std::ostream& operator<< (std::ostream&, const environment_t&);
 
+
+// Closures
+// Used to avoid evaluating inside lambdas and pis
+// This is because we are computing weak head normal form
 struct closure_t {
     environment_t environment;
     term_ptr term;
@@ -59,17 +79,7 @@ struct closure_t {
 };
 std::ostream& operator<< (std::ostream&, const closure_t&);
 
-struct vvar_t : value_t {
-    std::size_t level;
-
-    vvar_t(std::size_t level) : level {level} {}
-
-    std::ostream& to_string(std::ostream&);
-    term_ptr quote(std::size_t);
-    bool conv_VVAR(std::size_t, std::size_t);
-    bool conv(std::size_t, value_ptr);
-};
-
+// Lambdas (explicit, implicit)
 struct vabs_t : value_t {
     name_t var;
     closure_t body;
@@ -79,14 +89,8 @@ struct vabs_t : value_t {
 
     std::ostream& to_string(std::ostream&);
     value_ptr vApp(value_ptr,bool);
-    term_ptr quote(std::size_t);
-    bool conv_VU(std::size_t);
-    bool conv_VVAR(std::size_t, std::size_t);
-    bool conv_VABS(std::size_t, closure_t&);
-    bool conv_VAPP(std::size_t, value_ptr, value_ptr);
-    bool conv_VPI(std::size_t, value_ptr, closure_t&);
-    bool conv(std::size_t, value_ptr);
     term_ptr rename(std::size_t,renaming_t&);
+    term_ptr quote(std::size_t);
     void unify(std::size_t,value_ptr);
     void unify_ABS(std::size_t,closure_t&);
     void unify_IABS(std::size_t,closure_t&);
@@ -106,32 +110,18 @@ struct viabs_t : vabs_t {
     void unify_FLEX(std::size_t,std::size_t,spine_t&);
 };
 
-struct vapp_t : value_t {
-    value_ptr left;
-    value_ptr right;
-
-    vapp_t(value_ptr left,value_ptr right) : left {left}, right {right} {}
-    vapp_t() {}
-
-    std::ostream& to_string(std::ostream&);
-    term_ptr quote(std::size_t);
-    bool conv_VAPP(std::size_t, value_ptr, value_ptr);
-    bool conv(std::size_t, value_ptr);
-    value_ptr clone();
-};
-
+// Universes
 struct vu_t : value_t {
 
     vu_t() {}
     std::ostream& to_string(std::ostream&);
     term_ptr quote(std::size_t);
-    bool conv_VU(std::size_t);
-    bool conv(std::size_t, value_ptr);
     term_ptr rename(std::size_t,renaming_t&);
     void unify(std::size_t,value_ptr);
     void unify_U();
 };
 
+// pi types (explicit, implicit)
 struct vpi_t : value_t {
     name_t var;
     value_ptr typ;
@@ -148,8 +138,6 @@ struct vpi_t : value_t {
         var {var}, typ {typ}, body {closure_t(env,term)} {}
     std::ostream& to_string(std::ostream&);
     term_ptr quote(std::size_t);
-    bool conv_VPI(std::size_t, value_ptr, closure_t&);
-    bool conv(std::size_t, value_ptr);
     term_ptr check_RABS(context_t&,name_t, raw_ptr);
     std::pair<value_ptr,closure_t> infer_RAPP(context_t&);
     std::pair<value_ptr,closure_t> infer_RINAPP(context_t&);
@@ -182,6 +170,8 @@ struct vipi_t : vpi_t {
     inferrance_t insert(context_t&,term_ptr);
 };
 
+// Flexible metavariables
+// Basically, holes
 struct vflex_t : value_t {
     std::size_t index;
     spine_t spine;
@@ -202,6 +192,8 @@ struct vflex_t : value_t {
     void unify_RIG(std::size_t,std::size_t,spine_t&);
 };
 
+// Rigid metavariables
+// Basically, variables
 struct vrig_t : value_t {
     std::size_t level;
     spine_t spine;

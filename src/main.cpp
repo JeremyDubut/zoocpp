@@ -43,9 +43,15 @@ int main(int argc, char* argv[])
 
         context_t ctx = context_t();
         environment_t env = environment_t();
+        #ifdef DEBUG
+            LOG("Debug log:");
+        #endif
         inferrance_t inf = term->infer(ctx);
-        std::cout << "Inferred type: " << *inf.typ->quote(0)->display() << std::endl;
-        std::cout << "Normal form: " << *inf.term->nf(env) << std::endl;
+        #ifdef DEBUG
+            LOG("=================");
+        #endif
+        std::cout << "Inferred type: " << *inf.typ->display() << std::endl;
+        std::cout << "Normal form: " << *inf.term->nf(env)->display() << std::endl;
 
         return res;
     }

@@ -10,7 +10,7 @@ metaentry_t metavar_t::lookup(std::size_t i) {
     }
     else {
         std::stringstream ss("");
-        ss << "Looking up to a non-existing metavariable " << i;
+        ss << "Lookup error: non-existing metavariable " << i;
         throw ss.str();
     }
 }
@@ -40,5 +40,4 @@ renaming_t::renaming_t(std::size_t l, spine_t& spine) {
             throw "Unification error: several occurences of a variable in inverse";
         }
     }
-    // std::cout << "Fresh variable with " << dom << std::endl;
 }

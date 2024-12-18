@@ -1,4 +1,7 @@
 #pragma once
+
+// Header file for managing metavariables
+
 #include "common.hpp"
 
 

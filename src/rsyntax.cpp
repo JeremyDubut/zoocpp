@@ -1,20 +1,8 @@
-#include <iostream>
-#include <sstream>
 #include "value.hpp"
 #include "rsyntax.hpp"
 #include "syntax.hpp"
 
-#define BIND_CONTEXT(v,b,bp) \
-    environment.push_back(v); \
-    types.try_emplace(var,std::vector<type_t>()); \
-    type_t typ{t,level,bp}; \
-    types[var].push_back(typ); \
-    flags.push_back(b); \
-    level++;
-
 std::ostream& operator<< (std::ostream& out, raw_t& term) {return term.to_string(out);}
-
-
 std::ostream& raw_t::to_string(std::ostream& out) {return out << "Unknown raw term";}
 std::ostream& rvar_t::to_string(std::ostream& out) {return out << name;}
 std::ostream& rabs_t::to_string(std::ostream& out) {return out << "λ" << var << " " << *body;}
@@ -30,18 +18,18 @@ std::ostream& ru_t::to_string(std::ostream& out) {return out << "𝒰";}
 std::ostream& rpi_t::to_string(std::ostream& out) {return out << "(" << var << " : " << *typ << ") → " << *body;}
 std::ostream& ripi_t::to_string(std::ostream& out) {return out << "{" << var << " : " << *typ << "} → " << *body;}
 std::ostream& rhole_t::to_string(std::ostream& out) {return out << "?_";}
-std::ostream& rnl_t::to_string(std::ostream& out) {return out << std::endl << *body;}
-
-raw_ptr raw_t::update_body(raw_ptr body) {return body;}
-raw_ptr rabs_t::update_body(raw_ptr body) {
-    this->body = this->body->update_body(body);
-    return shared_from_this();
-}
 
 name_t raw_t::get_name() const {return "Unknown name";}
 name_t rvar_t::get_name() const {return name;}
 name_t rhole_t::get_name() const {return "_";}
 
+#define BIND_CONTEXT(v,b,bp) \
+    environment.push_back(v); \
+    types.try_emplace(var,std::vector<type_t>()); \
+    type_t typ{t,level,bp}; \
+    types[var].push_back(typ); \
+    flags.push_back(b); \
+    level++;
 void context_t::new_var(name_t var, value_ptr t) {
     BIND_CONTEXT(std::make_shared<vrig_t>(level),true,true);
 }
@@ -61,6 +49,8 @@ void context_t::pop(name_t var) {
     flags.pop_back();
 }
 
+// Types take too long to print
+// removed them for now
 std::ostream& operator<< (std::ostream& out, context_t& cont) {
     out << std::endl << "Context" << std::endl;
     out << "- Environment" << std::endl;
@@ -74,49 +64,47 @@ std::ostream& operator<< (std::ostream& out, context_t& cont) {
 }
 
 term_ptr raw_t::check(context_t& cont,value_ptr typ) {
-    // std::cout << "Checking term " << *this << " with type " << *typ << std::endl;
+    LOG("Checking term " << *this << " with type " << *typ);
     term_ptr res = typ->check_RAW(cont,shared_from_this());
-    // inferrance_t inf = infer(cont);
-    // typ->unify(cont.level,inf.typ);
-    // std::cout << "Type checking of term " << *this << " with type " << *typ << " successful, inferred as " << *res << std::endl;
+    LOG("Type checking of term " << *this << " with type " << *typ << " successful");
     return res;
 }
 term_ptr rabs_t::check(context_t& cont,value_ptr v) {
-    // std::cout << "Checking Explicit Lam " << *this << " with type " << *v << std::endl;
+    LOG("Checking Explicit Lam " << *this << " with type " << *v);
     term_ptr res = v->check_RABS(cont,var,body);
-    // std::cout << "Type check of Explicit Lam " << *this << " with type " << *v << " successful, inferred as " << *res << std::endl;
+    LOG("Type check of Explicit Lam " << *this << " with type " << *v << " successful");
     return res;
 }
 term_ptr riabs_t::check(context_t& cont,value_ptr v) {
-    // std::cout << "Checking Implicit Lam " << *this << " with type " << *v << std::endl;
+    LOG("Checking Implicit Lam " << *this << " with type " << *v);
     term_ptr res = v->check_RIABS(cont,var,body);
-    // std::cout << "Type check of Implicit Lam " << *this << " with type " << *v << " successful, inferred as " << *res << std::endl;
+    LOG("Type check of Implicit Lam " << *this << " with type " << *v << " successful");
     return res;
 }
 term_ptr rnabs_t::check(context_t& cont,value_ptr v) {
-    // std::cout << "Checking Named Implicit Lam " << *this << " with type " << *v << std::endl;
+    LOG("Checking Named Implicit Lam " << *this << " with type " << *v);
     term_ptr res = v->check_RNABS(cont,var,ivar,body);
-    // std::cout << "Type check of Named Implicit Lam " << *this << " with type " << *v << " successful, inferred as " << *res << std::endl;
+    LOG("Type check of Named Implicit Lam " << *this << " with type " << *v << " successful");
     return res;
 }
 term_ptr rlet_t::check(context_t& cont,value_ptr v) {
-    // std::cout << "Checking Let " << *typ << " with type " << *v << std::endl;
+    LOG("Checking Let " << var << " : " << *typ << " = " << *def << " in [...] with type " << *v);
     term_ptr res = v->check_LET(cont,var,typ,def,body);
-    // std::cout << "Type check of Let " << *this << " with type " << *v << " successful, inferred as " << *res << std::endl;
+    LOG("Type check of Let " << var << " : " << *typ << " = " << *def << " in [...] with type " << *v << " successful");
     return res;
 }
 term_ptr rhole_t::check(context_t& cont,value_ptr v) {
-    // std::cout << "Checking Hole" << std::endl;
+    LOG("Checking Hole");
     term_ptr res = v->check_HOLE(cont);
-    // std::cout << "Type check of hole done" << std::endl;
+    LOG("Type check of hole successful");
     return res;
 }
 
 inferrance_t raw_t::infer(context_t&){
-    throw "Inferring an unknown raw term.";
+    throw "Inferrance error: Inferring an unknown raw term.";
 }
 inferrance_t rabs_t::infer(context_t& cont){
-    // std::cout << "Inferring Explicit Lam" << *this << std::endl;
+    LOG("Inferring Explicit Lam" << *this);
     value_ptr a = FRESHMETA->eval(cont.environment);
     cont.new_var(var,a);
     inferrance_t inf = body->infer(cont);
@@ -124,113 +112,111 @@ inferrance_t rabs_t::infer(context_t& cont){
     cont.pop(var);
     closure_t clos = closure_t(cont.environment,inf.typ->quote(cont.level+1));
     inferrance_t res = inferrance_t(std::make_shared<abs_t>(var,inf.term),std::make_shared<vpi_t>(var,a,clos));
-    // std::cout << "Inferrance of Explicit Lam" << *this << "successful, inferred as " << *res.term << " with type " << *res.typ << std::endl;
+    LOG("Inferrance of Explicit Lam" << *this << "successful, inferred with type " << *res.typ);
     return res;
 }
 inferrance_t rnabs_t::infer(context_t&) {
-    throw "Cannot infer a named implicit lambda";
+    throw "Inferrance error: Cannot infer a named implicit lambda";
 }
 inferrance_t ru_t::infer(context_t&){
-    // std::cout << "Inferring U" << std::endl;
-    // std::cout << "Inferrance of U done" << std::endl;
+    // LOG("Inferring U");
+    // LOG("Inferrance of U done");
     return inferrance_t(std::make_shared<u_t>(), VU);
 }
 inferrance_t rvar_t::infer(context_t& cont){
     try {
-        // std::cout << "Inferring variable " << name << std::endl;
+        LOG("Inferring variable " << name);
         auto res = cont.types.at(name).end()-1;
         while (res != cont.types.at(name).begin()-1 && !res->source) {
             res = res-1;
         }
         if (res != cont.types.at(name).begin()-1) {
             term_ptr term = std::make_shared<var_t>(cont.level-1-res->level);
-            // std::cout << "Variable  " << name << " inferred as " << *term << " of typ " << *(res->typ) << std::endl;
+            LOG("Variable  " << name << " inferred with type " << *res->typ);
             return inferrance_t(term,res->typ->clone());
         }
         else {
-            throw "Unbounded variable "+name;
+            throw "Inferrance error: Unbounded variable "+name;
         }
     }
     catch (const std::out_of_range& e) {
-        throw "Unbounded variable "+name;
+        throw "Inferrance error: Unbounded variable "+name;
     }
 }
 inferrance_t rapp_t::infer(context_t& cont) {
-    // std::cout << "Inferring Explicit app " << *this->left << " and " << *this->right << std::endl;
+    LOG("Inferring Explicit app " << *this->left << " and " << *this->right);
     inferrance_t inff = left->infer(cont);
-    // std::cout << "Forced type: " << *inff.typ->force() << std::endl;
     inff = inff.typ->force()->insert(cont,inff.term);
-    // std::cout << "Inserted type: " << *inff.typ->force() << std::endl;
     std::pair<value_ptr,closure_t> infr = inff.typ->force()->infer_RAPP(cont);
     term_ptr rterm = right->check(cont,infr.first);
     CAPP(rterm->eval(cont.environment),infr.second,typ)
     term_ptr res = std::make_shared<app_t>(inff.term,rterm);
-    // std::cout << "Explicit App " << *this << " inferred as " << *res << " of type " << *typ << std::endl;
+    LOG("Explicit App " << *this << " inferred with type " << *typ);
     return inferrance_t(res,typ);
 }
 inferrance_t riapp_t::infer(context_t& cont) {
-    // std::cout << "Inferring Implicit app " << *this->left << " and " << *this->right << std::endl;
+    LOG("Inferring Implicit app " << *this->left << " and " << *this->right);
     inferrance_t inff = left->infer(cont);
     std::pair<value_ptr,closure_t> infr = inff.typ->force()->infer_RINAPP(cont);
     term_ptr rterm = right->check(cont,infr.first);
     CAPP(rterm->eval(cont.environment),infr.second,typ)
     term_ptr res = std::make_shared<iapp_t>(inff.term,rterm);
-    // std::cout << "Implicit App " << *this << " inferred as " << *res << " of type " << *typ << std::endl;
+    LOG("Implicit App " << *this << " inferred with type " << *typ);
     return inferrance_t(res,typ);
 }
 inferrance_t rnapp_t::infer(context_t& cont) {
-    // std::cout << "Inferring Named implicit app " << *this->left << " and " << *this->right << std::endl;
+    LOG("Inferring Named implicit app " << *this->left << " and " << *this->right);
     inferrance_t inff = left->infer(cont);
     inff = inff.typ->force()->insertUntilName(cont,ivar,inff.term);
     std::pair<value_ptr,closure_t> infr = inff.typ->force()->infer_RINAPP(cont);
     term_ptr rterm = right->check(cont,infr.first);
     CAPP(rterm->eval(cont.environment),infr.second,typ)
     term_ptr res = std::make_shared<iapp_t>(inff.term,rterm);
-    // std::cout << "Named Implicit App " << *this << " inferred as " << *res << " of type " << *typ << std::endl;
+    LOG("Named Implicit App " << *this << " inferred with type " << *typ);
     return inferrance_t(res,typ);
 }
 inferrance_t rpi_t::infer(context_t& cont) {
-    // std::cout << "Inferring Explicit pi " << *this << std::endl;
+    LOG("Inferring Explicit pi " << *this);
     term_ptr ttyp = typ->check(cont,VU);
     cont.new_var(var,ttyp->eval(cont.environment));
     term_ptr tbody = body->check(cont,VU);
     cont.pop(var);
     term_ptr res = std::make_shared<pi_t>(var,ttyp,tbody);
-    // std::cout << "Pi " << *this << " inferred as " << *res << " of type U" << std::endl;
+    LOG("Pi " << *this << " inferred with type U");
     return inferrance_t(res,VU);
 }
 inferrance_t ripi_t::infer(context_t& cont) {
-    // std::cout << "Inferring Implicit pi " << *this << std::endl;
+    LOG("Inferring Implicit pi " << *this);
     term_ptr ttyp = typ->check(cont,VU);
     cont.new_var(var,ttyp->eval(cont.environment));
     term_ptr tbody = body->check(cont,VU);
     cont.pop(var);
     term_ptr res = std::make_shared<ipi_t>(var,ttyp,tbody);
-    // std::cout << "Implicit Pi " << *this << " inferred as " << *res << " of type U" << std::endl;
+    LOG("Implicit Pi " << *this << " inferred with type U");
     return inferrance_t(res,VU);
 }
 inferrance_t rlet_t::infer(context_t& cont) {
-    // std::cout << "Inferring let " << *this << std::endl;
+    LOG("Inferring Let " << var << " : " << *typ << " = " << *def << " in [...]");
     term_ptr ttyp = typ->check(cont,VU);
     value_ptr vtyp = ttyp->eval(cont.environment);
     term_ptr tdef = def->check(cont,vtyp);
     value_ptr vdef = tdef->eval(cont.environment);
     cont.new_val(var,vtyp,vdef);
     inferrance_t inf = body->infer(cont);
+    LOG("Let " << var << " : " << *typ << " = " << *def << " in [...] inferred with type " << *inf.typ);
     cont.pop(var);
     inferrance_t res = inferrance_t(std::make_shared<let_t>(var,ttyp,tdef,inf.term),inf.typ);
-    // std::cout << "Let " << *this << " inferred as " << *res.term << " of type " << *res.typ << std::endl;
     return res;
 }
 inferrance_t rhole_t::infer(context_t& cont) {
-    // std::cout << "Inferring hole" << std::endl;
+    LOG("Inferring hole");
     value_ptr a = FRESHMETA->eval(cont.environment);
-    // std::cout << "Inferrance of hole successfule, inferred with type " << *a << std::endl;
+    LOG("Inferrance of hole successfule, inferred with type " << *a);
     return inferrance_t(FRESHMETA,a);
 }
 
 
-raw_ptr raw_t::build(raw_ptr) {throw "Cannot build an non-utility raw type";}
+raw_ptr raw_t::build(raw_ptr) {throw "Parser error: Cannot build a non-utility raw type";}
 raw_ptr iicit::build(raw_ptr r) {return std::make_shared<riabs_t>(bind,r);}
 raw_ptr eicit::build(raw_ptr r) {return std::make_shared<rabs_t>(bind,r);}
 raw_ptr nicit::build(raw_ptr r) {return std::make_shared<rnabs_t>(bind,r,name);}
@@ -278,7 +264,7 @@ raw_ptr arglist_t::build(raw_ptr r) {
     }
     return res;
 }
-raw_ptr raw_t::auto_build() {throw "Cannot auto build a non-list of arguments";}
+raw_ptr raw_t::auto_build() {throw "Parser error: Cannot auto build a non-list of arguments";}
 raw_ptr arglist_t::auto_build() {
     raw_ptr res = args[0];
     for (auto it = args.begin()+1; it!=args.end(); it++) {
@@ -286,66 +272,11 @@ raw_ptr arglist_t::auto_build() {
     }
     return res;
 }
-void raw_t::push_back(raw_ptr) {throw "Cannot push_back on a non-list type";}
+
+void raw_t::push_back(raw_ptr) {throw "Parser error: Cannot push_back on a non-list type";}
 void pibinderlist_t::push_back(raw_ptr r) {binders.push_back(r);}
 void arglist_t::push_back(raw_ptr r) {args.push_back(r);}
 void icitlist_t::push_back(raw_ptr r) {icits.push_back(r);}
-std::vector<name_t>* raw_t::get_namelist() { throw "Not a name list"; }
-std::vector<name_t>* namelist_t::get_namelist() { return names; }
-// std::vector<name_t> raw_t::get_names() const { throw "Not a binder"; }
-// std::vector<raw_ptr>* raw_t::get_binderlist() const { throw "Not a binder list"; }
-// raw_ptr raw_t::build_icit(raw_ptr) const { throw "Not an icit"; }
-// std::vector<raw_ptr>* raw_t::get_icitlist() const { throw "Not a icit list"; }
-// arg_t raw_t::build_arg(raw_ptr) const { throw "Not an arg"; }
-// raw_ptr raw_t::build_pi(raw_ptr) const { throw "Not an arg"; }
-// std::vector<raw_ptr>* raw_t::get_arglist() const { throw "Not an arg list"; }
-// std::vector<name_t> pibinder_t::get_names() const {return names;}
-// raw_ptr pibinder_t::build_pi(raw_ptr r){
-//     raw_ptr res = r;
-//     while (!names.empty()) {
-//         name_t var = names.end()-1;
-//     }
-// }
 
-// raw_ptr pifoldr(std::vector<raw_ptr>* v, raw_ptr r) {
-//     if (v->empty()) {
-//         return r;
-//     }
-//     raw_ptr pb = *(v->end()-1);
-//     std::vector<name_t> names = pb->get_names();
-//     v->pop_back();
-//     raw_ptr res = pifoldr(v,r);
-//     res = pb.build_pi(res);
-//     while (!names.empty()) {
-//         name_t var = *(names.end()-1);
-//         names.pop_back();
-//         if (pb.icit) {
-//             res = std::make_shared<ripi_t>(var,pb.typ,res);
-//         }
-//         else {
-//             res = std::make_shared<rpi_t>(var,pb.typ,res);
-//         }
-//     }
-//     return res;
-// }
-// raw_ptr lamfoldr(std::vector<icit>* v, raw_ptr r) {
-//     raw_ptr res = r;
-//     while (!v->empty()) {
-//         icit d = *(v->end()-1);
-//         res = d.rptr(res);
-//     }
-//     return res;
-// }
-// raw_ptr appfoldl(std::vector<arg_t>* v1, std::vector<arg_t>* v2) {
-//     auto it = v1->begin();
-//     raw_ptr res = it->arg;
-//     it++;
-//     while (it != v1->end()) {
-//         res = it->rptr(res);
-//         it++;
-//     }
-//     for (arg_t arg : *v2) {
-//         res = arg.rptr(res);
-//     }
-//     return res;
-// }
+std::vector<name_t>* raw_t::get_namelist() { throw "Parser error: Not a name list"; }
+std::vector<name_t>* namelist_t::get_namelist() { return names; }

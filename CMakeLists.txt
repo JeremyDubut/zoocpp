@@ -27,6 +27,9 @@ BISON_TARGET(Parser src/parser.yy ${BISON_OUTPUT} COMPILE_FLAGS "-v -Wcounterexa
 # Add generated files to the project
 # ADD_FLEX_BISON_DEPENDENCY(Lexer Parser)
 
+# Specify Debug build options
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
+
 # Include directories
 include_directories(${CMAKE_SOURCE_DIR}/src/include ${CMAKE_BINARY_DIR})
 

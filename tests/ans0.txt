@@ -5,4 +5,4 @@ Let bar : (A : 𝒰) → (_ : A) → A = ((id (A : 𝒰) → (_ : A) → A) id) 
 id
 =================
 Inferred type: (A : 𝒰) → (_ : A) → A
-Normal form: λA λx Var0
+Normal form: λA λx x

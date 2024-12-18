@@ -1,5 +1,3 @@
-#include <iostream>
-#include <sstream>
 #include "syntax.hpp"
 #include "value.hpp"
 #include "rsyntax.hpp"
@@ -39,11 +37,9 @@ value_ptr let_t::eval(environment_t& env) {
 }
 value_ptr app_t::eval(environment_t& env) {
     return left->eval(env)->vApp(right->eval(env),false);
-    // return std::make_shared<vapp_t>(*left.eval(env),*right.eval(env));
 }
 value_ptr iapp_t::eval(environment_t& env) {
     return left->eval(env)->vApp(right->eval(env),true);
-    // return std::make_shared<vapp_t>(*left.eval(env),*right.eval(env));
 }
 value_ptr u_t::eval(environment_t&) {
     return std::make_shared<vu_t>();
@@ -66,15 +62,12 @@ value_ptr imeta_t::eval(environment_t& env) {
     else {
         auto ite = env.begin();
         value_ptr res = VMETA(index);
-        // std::cout << "Looking out " << index << " with " << *res << " and " << flags.size() << std::endl;
         for (bool itf : flags) {
-            // std::cout << itf << std::endl;
             if (itf) {
                 res = res->vApp((*ite)->clone(),false);
             }
             ite++;
         }
-        // std::cout << "Result " << *res << std::endl;
         return res;
     }
 }
@@ -91,7 +84,14 @@ raw_ptr term_t::display_rec(names_t&) {
     throw "Display unknown value";
 }
 raw_ptr var_t::display_rec(names_t& names) {
-    return std::make_shared<rvar_t>(names[names.size()-1-index]);
+    if (names.size()-1-index >= 0) {
+        return std::make_shared<rvar_t>(names[names.size()-1-index]);
+    }
+    else {
+        std::stringstream ss("");
+        ss << "Display error: cannot access variable " << index;
+        throw ss.str();
+    }
 }
 raw_ptr abs_t::display_rec(names_t& names) {
     names.push_back(var);

@@ -1,6 +1,14 @@
 #pragma once
+
+// Header files for the raw terms
+// Those terms are obtained from the parser
+// It is also called pre-syntax
+
 #include "common.hpp"
 
+
+// With types, we keep track also of the de Bruijn level of the variable,
+// and of its source (true: from the source, false: from a named implicit argument)
 struct type_t {
     value_ptr typ;
     std::size_t level;
@@ -8,6 +16,12 @@ struct type_t {
 
     type_t(value_ptr typ, std::size_t level, bool source) : typ{typ}, level{level}, source{source} {}
 };
+
+// The context keep track of the variables seen so far in the scope
+// environment: the values of those variables if known
+// types: see above
+// flags: booleans that tell if the variables comes from a lambda (true) or a let (false)
+// level: the current de Bruijn level
 struct context_t {
 
     environment_t environment;
@@ -16,43 +30,44 @@ struct context_t {
     std::size_t level; 
 
     context_t() : environment {environment_t()}, types {types_t()}, flags {flags_t()}, level {0} {}
+    // Add a new rigid variable in the context
     void new_var(name_t, value_ptr);
+    // Add a new defined by a let variable with the corresponding type
     void new_val(name_t, value_ptr, value_ptr);
+    // Add a new variable from a named implicit argument
     void new_bind(name_t, value_ptr);
+    // To properly manage the variables in scope
     void pop(name_t);
 };
 std::ostream& operator<< (std::ostream& out, context_t& cont);
-
-struct pibinder_t;
-struct icit;
-struct arg_t;
 
 struct raw_t : std::enable_shared_from_this<raw_t> {
 
     raw_t() : std::enable_shared_from_this<raw_t>() {}
     virtual ~raw_t() {}
 
+    // for printing, ostreams for overloading << operator
     virtual std::ostream& to_string(std::ostream&);
-    virtual raw_ptr update_body(raw_ptr);
+    // to get a string out of a variable or a hole
+    // useful in the parser
     virtual name_t get_name() const;
-    virtual raw_ptr build(raw_ptr);
-    virtual void push_back(raw_ptr);
+    // helpers for the parser
+    // we need sometimes lists of terms instead of terms
+    // but using unions with bison seems not well supported
+    // so we encode those lists as terms and we use those 
+    // helpers to manage those
     virtual std::vector<name_t>* get_namelist();
+    virtual void push_back(raw_ptr);
+    // Same hereto build up a term from a list of terms
     virtual raw_ptr auto_build();
-    // virtual std::vector<name_t> get_names() const;
-    // virtual std::vector<raw_ptr>* get_binderlist() const;
-    // virtual raw_ptr build_icit(raw_ptr) const;
-    // virtual raw_ptr build_pi(raw_ptr);
-    // virtual std::vector<raw_ptr>* get_icitlist() const;
-    // virtual arg_t build_arg(raw_ptr) const;
-    // virtual std::vector<raw_ptr>* get_arglist() const;
+    virtual raw_ptr build(raw_ptr);
+    // Type check and inferrance
     virtual term_ptr check(context_t&,value_ptr);
     virtual inferrance_t infer(context_t&);
-
 };
-
 std::ostream& operator<< (std::ostream&, raw_t&);
 
+// Variables
 struct rvar_t : raw_t {
     name_t name;
 
@@ -63,6 +78,11 @@ struct rvar_t : raw_t {
     inferrance_t infer(context_t&);
 };
 
+// lambdas
+// implicit ones (riabs) and named implicit one (rnabs)
+// inherits from the explicit ones to backward compatibility
+// it is also useful since some functions do not care about 
+// the type of lambdas
 struct rabs_t : raw_t {
     name_t var;
     raw_ptr body;
@@ -70,7 +90,6 @@ struct rabs_t : raw_t {
     rabs_t(name_t var, raw_ptr body) : var {var}, body {body} {}
 
     std::ostream& to_string(std::ostream&);
-    raw_ptr update_body(raw_ptr);
     term_ptr check(context_t&,value_ptr);
     inferrance_t infer(context_t&);
 };
@@ -92,6 +111,8 @@ struct rnabs_t : rabs_t {
     inferrance_t infer(context_t&);
 };
 
+// Applications
+// Same as lambdas
 struct rapp_t : raw_t {
     raw_ptr left;
     raw_ptr right;
@@ -118,6 +139,7 @@ struct rnapp_t : rapp_t {
     inferrance_t infer(context_t&);
 };
 
+// Lets
 struct rlet_t : raw_t {
     name_t var;
     raw_ptr typ;
@@ -139,6 +161,8 @@ struct rlet_t : raw_t {
     inferrance_t infer(context_t&);
 };
 
+// Universes
+// Maybe we could have one unique shared pointer to this
 struct ru_t : raw_t {
 
     ru_t() {}
@@ -146,6 +170,8 @@ struct ru_t : raw_t {
     inferrance_t infer(context_t&);
 };
 
+// Pi types
+// Same as lambdas
 struct rpi_t : raw_t {
     name_t var;
     raw_ptr typ;
@@ -170,6 +196,8 @@ struct ripi_t : rpi_t {
     inferrance_t infer(context_t&);
 };
 
+// Holes
+// They basically behaves like variables "_" for the parser
 struct rhole_t : raw_t {
 
     rhole_t() {}
@@ -179,18 +207,10 @@ struct rhole_t : raw_t {
     inferrance_t infer(context_t&);
 };
 
-struct rnl_t : raw_t {
 
-    raw_ptr body;
+// Those are only used in the parser
 
-    rnl_t(raw_ptr body) : body {body} {}
-    std::ostream& to_string(std::ostream&);
-
-};
-
-// used only for parsing
-
-
+// Basically, prefixes of pis
 struct pibinder_t : raw_t {
     std::vector<name_t> names;
     raw_ptr typ;
@@ -199,7 +219,6 @@ struct pibinder_t : raw_t {
     pibinder_t(std::vector<name_t> names, raw_ptr typ, bool icit): names {names}, typ {typ}, icit {icit} {}
     raw_ptr build(raw_ptr);
 };
-
 struct pibinderlist_t : raw_t {
     std::vector<raw_ptr> binders;
 
@@ -208,6 +227,7 @@ struct pibinderlist_t : raw_t {
     void push_back(raw_ptr);
 };
 
+// List of lambda declarations
 struct icit : raw_t {
     name_t bind;
     icit(name_t bind) : bind{bind} {}
@@ -225,7 +245,6 @@ struct nicit : icit {
     nicit(name_t bind,name_t name): icit(bind), name{name} {}
     raw_ptr build(raw_ptr );
 };
-
 struct icitlist_t : raw_t {
     std::vector<raw_ptr> icits;
 
@@ -234,7 +253,7 @@ struct icitlist_t : raw_t {
     void push_back(raw_ptr);
 };
 
-
+// To keep track of lists of arguments
 struct arg_t : raw_t {
     raw_ptr arg;
     arg_t(raw_ptr arg) : arg{arg} {}
@@ -252,7 +271,6 @@ struct narg_t : arg_t {
     narg_t(raw_ptr arg,name_t name): arg_t(arg), name{name} {}
     raw_ptr build(raw_ptr);
 };
-
 struct arglist_t : raw_t {
     std::vector<raw_ptr> args;
 
@@ -262,6 +280,9 @@ struct arglist_t : raw_t {
     void push_back(raw_ptr);
 };
 
+// List of variables and holes
+// They can be a list of variable declarations in pi or lambda
+// or a chain of applications
 struct namelist_t : raw_t {
     std::vector<name_t>* names;
 

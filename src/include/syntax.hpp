@@ -3,21 +3,29 @@
 #include "metavar.hpp"
 
 
+// Terms used during the inferrance/check
+// They are the syntax
 struct term_t : std::enable_shared_from_this<term_t> {
 
     virtual ~term_t() {}
 
+    // To print
     virtual std::ostream& to_string(std::ostream&);
+    // Evaluate the variables, the applications, ...
     virtual value_ptr eval(environment_t&);
+    // Weak head normal form
     term_ptr nf(environment_t&);
+    // A better display to remove the debruijn indices
     raw_ptr display();
     virtual raw_ptr display_rec(names_t&);
+    // helper for the elaboration
     virtual inferrance_t insert(context_t&,value_ptr);
 
 };
 
 std::ostream& operator<< (std::ostream&, term_t&);
 
+// Variables with debruijn index
 struct var_t : term_t {
     std::size_t index;
 
@@ -28,6 +36,7 @@ struct var_t : term_t {
     raw_ptr display_rec(names_t&);
 };
 
+// Lambdas (explicit, implict)
 struct abs_t : term_t {
     name_t var;
     term_ptr body;
@@ -48,6 +57,7 @@ struct iabs_t : abs_t {
     inferrance_t insert(context_t&,value_ptr);
 };
 
+// Applications (explicit, implicit arguments)
 struct app_t : term_t {
     term_ptr left;
     term_ptr right;
@@ -67,6 +77,7 @@ struct iapp_t : app_t {
     raw_ptr display_rec(names_t&);
 };
 
+// Lets
 struct let_t : term_t {
     name_t var;
     term_ptr typ;
@@ -81,6 +92,7 @@ struct let_t : term_t {
     raw_ptr display_rec(names_t&);
 };
 
+// Universes
 struct u_t : term_t {
 
     u_t() {}
@@ -90,6 +102,7 @@ struct u_t : term_t {
     raw_ptr display_rec(names_t&);
 };
 
+// Pi types (explicit, implicit)
 struct pi_t : term_t {
     name_t var;
     term_ptr typ;
@@ -112,6 +125,9 @@ struct ipi_t : pi_t {
     raw_ptr display_rec(names_t&);
 };
 
+// Metavariables
+// Constructors gloablly create them
+// The term itself only contains the index
 struct meta_t : term_t {
 
     std::size_t index;
@@ -124,6 +140,10 @@ struct meta_t : term_t {
 
 };
 
+// Metavariables, inserted during elaboration
+// Constructors gloablly create them
+// The term itself only contains the index and flags
+// Flags are just to know if variables are bound (true) or defined by let (false)
 struct imeta_t : term_t {
 
     std::size_t index;

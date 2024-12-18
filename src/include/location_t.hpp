@@ -1,6 +1,7 @@
-// see https://stackoverflow.com/questions/76509844/how-do-you-interface-c-flex-with-c-bison
-
 #pragma once
+
+// Header file for helping the error management in the lexer and the parser
+// see https://stackoverflow.com/questions/76509844/how-do-you-interface-c-flex-with-c-bison
 
 #include <cstddef>
 #include <ostream>
