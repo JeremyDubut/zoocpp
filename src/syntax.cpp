@@ -17,6 +17,7 @@ std::ostream& pi_t::to_string(std::ostream& out) {return out << "(" << var << " 
 std::ostream& ipi_t::to_string(std::ostream& out) {return out << "{" << var << " : " << *typ << "} → " << *body;}
 std::ostream& meta_t::to_string(std::ostream& out) {return out << "?" << index;}
 std::ostream& imeta_t::to_string(std::ostream& out) {return out << "?" << index;}
+std::ostream& appp_t::to_string(std::ostream& out) {return out << "(" << *left << " [prunes])";}
 std::ostream& operator<< (std::ostream& out, term_t& term) {return term.to_string(out);}
 
 value_ptr term_t::eval(environment_t&) {
@@ -56,7 +57,7 @@ value_ptr meta_t::eval(environment_t&) {
 value_ptr imeta_t::eval(environment_t& env) {
     if (env.size() != flags.size()) {
         std::stringstream ss("");
-        ss << "Inconsistency between environments " << env << " and flags " << flags.size();
+        ss << "Evaluation error: Inconsistency between environments " << env.size() << " and flags " << flags.size();
         throw ss.str();
     }
     else {
@@ -65,6 +66,25 @@ value_ptr imeta_t::eval(environment_t& env) {
         for (bool itf : flags) {
             if (itf) {
                 res = res->vApp((*ite)->clone(),false);
+            }
+            ite++;
+        }
+        return res;
+    }
+}
+value_ptr appp_t::eval(environment_t& env) {
+    if (env.size() != prune.size()) {
+        std::stringstream ss("");
+        ss << "Inconsistency between environments " << env.size() << " and flags " << prune.size();
+        throw ss.str();
+    }
+    else {
+        auto ite = env.begin();
+        value_ptr res = left->eval(env);
+        for (pruning_t itf : prune) {
+            switch (itf) {
+                case Implicit: res = res->vApp(*ite,true); break;
+                case Explicit: res = res->vApp(*ite,true); break;
             }
             ite++;
         }
@@ -135,4 +155,14 @@ inferrance_t term_t::insert(context_t& cont, value_ptr typ) {
 }
 inferrance_t iabs_t::insert(context_t&, value_ptr typ) {
     return inferrance_t(shared_from_this(),typ);
+}
+
+term_ptr locals_t::closety(term_ptr body) {
+    return body;
+}
+term_ptr lbind_t::closety(term_ptr body) {
+    return mcl->closety(std::make_shared<pi_t>(var,typ,body));
+}
+term_ptr ldefine_t::closety(term_ptr body) {
+    return mcl->closety(std::make_shared<let_t>(var,typ,def,body));
 }

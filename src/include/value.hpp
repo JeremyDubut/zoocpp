@@ -14,6 +14,7 @@ struct inferrance_t {
     inferrance_t(term_ptr term, value_ptr typ) : term {term}, typ {typ} {}
 };
 
+
 // Values
 struct value_t : std::enable_shared_from_this<value_t> {
 

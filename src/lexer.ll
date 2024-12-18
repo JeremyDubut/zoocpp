@@ -42,6 +42,7 @@
 "let" { return Token::LET; }
 ":" { return Token::COLON; }
 "->" { return Token::TO; }
+"→" { return Token::TO; }
 "." { return Token::DOT; }
 "U" { return Token::U; }
 "in" { return Token::IN; }

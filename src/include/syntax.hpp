@@ -2,6 +2,34 @@
 #include "common.hpp"
 #include "metavar.hpp"
 
+// Locals
+struct locals_t {
+
+    virtual ~locals_t() {}
+    virtual term_ptr closety(term_ptr);
+
+};
+struct lbind_t : locals_t {
+
+    locals_ptr mcl;
+    name_t var;
+    term_ptr typ;
+
+    lbind_t(locals_ptr& mcl, name_t& var, term_ptr typ) : var{var}, typ{typ} {this->mcl = std::move(mcl);}
+    term_ptr closety(term_ptr);
+
+};
+struct ldefine_t : locals_t {
+
+    locals_ptr mcl;
+    name_t var;
+    term_ptr typ;
+    term_ptr def;
+
+    ldefine_t(locals_ptr& mcl, name_t& var, term_ptr typ, term_ptr def) : var{var}, typ{typ}, def{def} {this->mcl = std::move(mcl);}
+    term_ptr closety(term_ptr);
+
+};
 
 // Terms used during the inferrance/check
 // They are the syntax
@@ -152,6 +180,18 @@ struct imeta_t : term_t {
     imeta_t(flags_t& flags) : index {metavar_t().id}, flags {flags} {}
     imeta_t() : index {metavar_t().id}, flags {flags_t()} {}
     
+    std::ostream& to_string(std::ostream&);
+    value_ptr eval(environment_t&);
+
+};
+
+// Application-prunings
+struct appp_t : term_t {
+
+    term_ptr left;
+    prunings_t prune;
+
+    appp_t(term_ptr left) : left{left}, prune{prunings_t()} {}
     std::ostream& to_string(std::ostream&);
     value_ptr eval(environment_t&);
 
