@@ -15,16 +15,17 @@ value_ptr solvedmeta_t::get_value(std::size_t) {
     LOG("Getting value of solved metavariable with " << *sol);
     return sol;}
 
-metaentry_t metaentry_t::update(value_ptr sol) {
+meta_ptr metaentry_t::update(value_ptr sol) {
     LOG("Updatin value of unsolved metavariable to " << *sol);
-    return solvedmeta_t(typ,sol);
+    return std::make_shared<solvedmeta_t>(typ,sol);
 }
-metaentry_t solvedmeta_t::update(value_ptr) {
-    throw "Unification error: trying to solve an already solved metavariable";
+meta_ptr solvedmeta_t::update(value_ptr newsol) {
+    LOG("Updating value of an already solved metavariable from " << *sol << " to " << *newsol);
+    return std::make_shared<solvedmeta_t>(typ,newsol);
 }
 
 metadata_t metavar_t::lookupTable {};
-metaentry_t metavar_t::lookup(std::size_t i) {
+meta_ptr metavar_t::lookup(std::size_t i) {
     if (i < lookupTable.size()) {
         return lookupTable[i];
     }
@@ -60,4 +61,14 @@ renaming_t::renaming_t(std::size_t l, spine_t& spine) {
             throw "Unification error: several occurences of a variable in inverse";
         }
     }
+}
+
+std::ostream& metaentry_t::to_string(std::ostream& out) {
+    return out << "Not solved metavar";
+}
+std::ostream& solvedmeta_t::to_string(std::ostream& out) {
+    return out << "Solved metavar with " << *sol;
+}
+std::ostream& operator<< (std::ostream& out, metaentry_t& m) {
+    return m.to_string(out);
 }

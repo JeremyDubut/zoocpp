@@ -11,9 +11,10 @@ struct metaentry_t {
     metaentry_t(value_ptr typ) : typ{typ} {}
     virtual ~metaentry_t() {}
 
+    virtual std::ostream& to_string(std::ostream&);
     virtual value_ptr get_value(value_ptr,spine_t&);
     virtual value_ptr get_value(std::size_t);
-    virtual metaentry_t update(value_ptr);
+    virtual meta_ptr update(value_ptr);
 
 };
 struct solvedmeta_t : metaentry_t{
@@ -22,20 +23,22 @@ struct solvedmeta_t : metaentry_t{
 
     solvedmeta_t(value_ptr typ, value_ptr sol) : metaentry_t(typ), sol{sol} {}
 
+    std::ostream& to_string(std::ostream&);
     value_ptr get_value(value_ptr,spine_t&);
     value_ptr get_value(std::size_t);
-    metaentry_t update(value_ptr);
+    meta_ptr update(value_ptr);
 
 };
+std::ostream& operator<< (std::ostream&, metaentry_t&);
 
 struct metavar_t {
 
     static metadata_t lookupTable;
-    static metaentry_t lookup(std::size_t);
+    static meta_ptr lookup(std::size_t);
 
     std::size_t id;
 
-    metavar_t(value_ptr typ) : id {lookupTable.size()} {lookupTable.push_back(metaentry_t(typ));}
+    metavar_t(value_ptr typ) : id {lookupTable.size()} {lookupTable.push_back(std::make_shared<metaentry_t>(typ));}
 
 
 };

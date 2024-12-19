@@ -199,6 +199,7 @@ inferrance_t ripi_t::infer(context_t& cont) {
 inferrance_t rlet_t::infer(context_t& cont) {
     LOG("Inferring Let " << var << " : " << *typ << " = " << *def << " in [...]");
     term_ptr ttyp = typ->check(cont,VU);
+    LOG("Let's see the type before eval: " << *ttyp);
     value_ptr vtyp = ttyp->eval(cont.environment);
     term_ptr tdef = def->check(cont,vtyp);
     value_ptr vdef = tdef->eval(cont.environment);

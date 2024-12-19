@@ -3,7 +3,7 @@
 #include "rsyntax.hpp"
 
 #define VMETA(n) \
-    metavar_t::lookup(n).get_value(n)->clone()
+    metavar_t::lookup(n)->get_value(n)->clone()
 
 std::ostream& term_t::to_string(std::ostream& out) {return out << "Unknown term";}
 std::ostream& var_t::to_string(std::ostream& out) {return out << "Var" << index;}

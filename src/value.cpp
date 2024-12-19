@@ -47,7 +47,7 @@
         i++; \
     } \
     value_ptr solution = trhs->eval(env); \
-    metaentry_t me = metavar_t::lookup(index).update(solution); \
+    meta_ptr me = metavar_t::lookup(index)->update(solution); \
     metavar_t::lookupTable[index] = me; 
 #define RENAMEABS(t) \
     std::size_t l = ren.cod; \
@@ -340,7 +340,7 @@ value_ptr value_t::force() {
     return shared_from_this();
 }
 value_ptr vflex_t::force() {
-    return metavar_t::lookup(index).get_value(shared_from_this(),spine);
+    return metavar_t::lookup(index)->get_value(shared_from_this(),spine);
     // metaentry_t entry = metavar_t::lookup(index);
     // if (entry.has_value()) {
     //     return entry.value()->clone()->vAppSp(spine)->force();
