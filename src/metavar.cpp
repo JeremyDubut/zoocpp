@@ -8,11 +8,9 @@ value_ptr solvedmeta_t::get_value(value_ptr, spine_t& spine) {
     return sol->clone()->vAppSp(spine)->force();
 }
 value_ptr metaentry_t::get_value(std::size_t index) {
-    LOG("Getting value of unsolved metavariable");
     return std::make_shared<vflex_t>(index);
     }
 value_ptr solvedmeta_t::get_value(std::size_t) {
-    LOG("Getting value of solved metavariable with " << *sol);
     return sol;}
 
 meta_ptr metaentry_t::update(value_ptr sol) {
@@ -41,6 +39,9 @@ void renaming_t::lift() {
     dom++;
     cod++;
 }
+void renaming_t::skip() {
+    cod++;
+}
 void renaming_t::pop() {
     dom--;
     cod--;
@@ -51,16 +52,37 @@ renaming_t::renaming_t(std::size_t l, spine_t& spine) {
     ren = renamingFun_t();
     cod = l;
     dom = 0;
-    for (auto it : spine) {
-        std::size_t x = it.first->clone()->force()->inverse();
-        if (!ren.contains(x)) {
-            ren[x] = dom;
+    prunings_t prune_val {};
+    std::unordered_set<std::size_t> nlvars {};
+    std::vector<std::pair<std::size_t,bool>> fsp {};
+    auto it = spine.end()-1;
+    while (it != spine.begin()-1) {
+        std::size_t x = it->first->clone()->force()->inverse();
+        if (ren.contains(x) || nlvars.contains(x)) {
             dom++;
+            ren.erase(x);
+            nlvars.insert(x);
+            fsp.push_back(std::make_pair(x,it->second));
         }
         else {
-            throw "Unification error: several occurences of a variable in inverse";
+            ren[dom] = x;
+            dom++;
+            fsp.push_back(std::make_pair(x,it->second));
+        }
+        it = it-1;
+    }
+    for (auto it2 : fsp) {
+        if (nlvars.contains(it2.first)) {
+            prune_val.push_back(None);
+        }
+        else if (it2.second) {
+            prune_val.push_back(Implicit);
+        }
+        else {
+            prune_val.push_back(Explicit);
         }
     }
+    prune = std::optional<prunings_t>(prune_val);
 }
 
 std::ostream& metaentry_t::to_string(std::ostream& out) {

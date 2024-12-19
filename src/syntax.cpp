@@ -61,7 +61,6 @@ value_ptr imeta_t::eval(environment_t& env) {
         throw ss.str();
     }
     else {
-        LOG("Is OK: " << *env[0] << *env[1] << " and " << flags[0] << flags[1]);
         auto ite = env.begin();
         value_ptr res = VMETA(index);
         for (bool itf : flags) {

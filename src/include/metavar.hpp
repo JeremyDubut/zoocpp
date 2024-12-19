@@ -48,9 +48,11 @@ struct renaming_t {
     std::size_t dom;
     std::size_t cod;
     renamingFun_t ren;
+    std::optional<prunings_t> prune;
 
-    renaming_t() : dom {0}, cod {0}, ren {renamingFun_t()} {}
+    renaming_t() : dom {0}, cod {0}, ren {renamingFun_t()}, prune{std::optional<prunings_t>()} {}
     void lift();
+    void skip();
     void pop();
     renaming_t(std::size_t,spine_t&);
 };
