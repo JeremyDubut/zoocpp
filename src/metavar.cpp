@@ -7,10 +7,16 @@ value_ptr metaentry_t::get_value(value_ptr v, spine_t&) {return v;}
 value_ptr solvedmeta_t::get_value(value_ptr, spine_t& spine) {
     return sol->clone()->vAppSp(spine)->force();
 }
-value_ptr metaentry_t::get_value(std::size_t index) {return std::make_shared<vflex_t>(index);}
-value_ptr solvedmeta_t::get_value(std::size_t) {return sol;}
+value_ptr metaentry_t::get_value(std::size_t index) {
+    LOG("Getting value of unsolved metavariable");
+    return std::make_shared<vflex_t>(index);
+    }
+value_ptr solvedmeta_t::get_value(std::size_t) {
+    LOG("Getting value of solved metavariable with " << *sol);
+    return sol;}
 
 metaentry_t metaentry_t::update(value_ptr sol) {
+    LOG("Updatin value of unsolved metavariable to " << *sol);
     return solvedmeta_t(typ,sol);
 }
 metaentry_t solvedmeta_t::update(value_ptr) {

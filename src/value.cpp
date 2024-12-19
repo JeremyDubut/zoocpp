@@ -286,6 +286,7 @@ std::pair<value_ptr,closure_t> vipi_t::infer_RAPP(context_t&) {
 }
 
 std::pair<value_ptr,closure_t> value_t::infer_RINAPP(context_t& cont) {
+    LOG("Inferrance inside implicit app, with " << *this);
     value_ptr a = FRESHMETA(VU)->eval(cont.environment); // Type of FM
     std::stringstream ss("");
     ss << "x" << this;
@@ -298,6 +299,7 @@ std::pair<value_ptr,closure_t> value_t::infer_RINAPP(context_t& cont) {
 
 }
 std::pair<value_ptr,closure_t> vipi_t::infer_RINAPP(context_t&) {
+    LOG("Inferrance inside implicit app, with implicit pi");
     return std::make_pair(typ,body);
 }
 std::pair<value_ptr,closure_t> vpi_t::infer_RINAPP(context_t&) {
@@ -394,6 +396,7 @@ term_ptr vrig_t::rename(std::size_t m,renaming_t& ren) {
 }
 
 void value_t::solve(std::size_t gamma, std::size_t index, spine_t& spine) {
+    LOG("Solving " << index << " with value " << *this);
     renaming_t ren = renaming_t(gamma,spine);
     term_ptr trhs = rename(index,ren);
     SOLVE(ren.dom)
@@ -461,6 +464,7 @@ void value_t::unify_U() {
 void vu_t::unify_U() {}
 // The case vabs_t is necessarily an error because vApp is not define on U
 void vflex_t::unify_U() {
+    LOG("Solving " << *this << " with U");
     term_ptr trhs = std::make_shared<u_t>();
     SOLVE(spine.size())
 }
@@ -479,6 +483,7 @@ void vipi_t::unify_PI(std::size_t,name_t,value_ptr,closure_t&) {
     throw "Unification error: icit mismatch in pi";
 }
 void vflex_t::unify_PI(std::size_t level, name_t var, value_ptr typ,closure_t& body) {
+    LOG("Solving " << *this << " with explicit pi " << *typ << " and " << body);
     renaming_t ren = renaming_t(level,spine);
     std::size_t l = ren.cod;
     VCAPP(body,val);
@@ -500,6 +505,7 @@ void vipi_t::unify_IPI(std::size_t l,name_t,value_ptr typ1,closure_t& body1) {
     val1->force()->unify(l+1,val->force());
 }
 void vflex_t::unify_IPI(std::size_t level, name_t var, value_ptr typ,closure_t& body) {
+    LOG("Solving " << *this << " with implicit pi " << *typ << " and " << body);
     renaming_t ren = renaming_t(level,spine);
     std::size_t l = ren.cod;
     VCAPP(body,val);
@@ -537,6 +543,7 @@ void viabs_t::unify_RIG(std::size_t l, std::size_t m, spine_t& spine) {
 void vflex_t::unify_RIG(std::size_t l, std::size_t level, spine_t& spine1) {
     renaming_t ren = renaming_t(l,spine);
     if (ren.ren.contains(level)) {
+        LOG("Solving " << *this << " with RIG " << level);
         RENAMESP_NORET(std::make_shared<var_t>(ren.dom-ren.ren[level]-1),index,spine1)
         SOLVE(ren.dom)
     }

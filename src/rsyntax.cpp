@@ -160,6 +160,7 @@ inferrance_t riapp_t::infer(context_t& cont) {
     std::pair<value_ptr,closure_t> infr = inff.typ->force()->infer_RINAPP(cont);
     term_ptr rterm = right->check(cont,infr.first);
     CAPP(rterm->eval(cont.environment),infr.second,typ)
+    LOG("Argument of implicit app of type " << *infr.second.term);
     term_ptr res = std::make_shared<iapp_t>(inff.term,rterm);
     LOG("Implicit App " << *this << " inferred with type " << *typ);
     return inferrance_t(res,typ);
