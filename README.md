@@ -16,7 +16,8 @@ The first time:
 
     mkdir build && cd build
 
-The first time, everytime you modify the CMakeLists.txt files, or when you remove files from `build`:
+The first time, everytime you modify the CMakeLists.txt files, when you remove files from `build`, 
+or when you want to change the build type:
 
     cmake -S .. -B . -DCMAKE_BUILD_TYPE=<build_type>
 

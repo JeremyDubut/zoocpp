@@ -28,6 +28,7 @@
 #define UNIFYSP \
     auto it1 = spine1.begin(); \
     for (auto it : spine) { \
+        LOG("Unifying spine: " << *(*it1).first << " and " << *it.first); \
         (*it1).first->clone()->unify(l,it.first->clone()); \
         it1++; \
     }
@@ -78,7 +79,13 @@ std::ostream& vflex_t::to_string(std::ostream& out) {
     }
     return out << "]";
 }
-std::ostream& vrig_t::to_string(std::ostream& out) {return out << "?" << level;}
+std::ostream& vrig_t::to_string(std::ostream& out) {
+    out << "?" << level << " [";
+    for (auto it : spine) {
+        out << *it.first <<" ;";
+    }
+    return out << "]";
+}
 
 // Environments take too long to print
 // removed them for now
@@ -391,6 +398,10 @@ term_ptr vrig_t::rename(std::size_t m,renaming_t& ren) {
     else {
         std::stringstream ss("");
         ss << "Unification error: escaping RIGID " << *this;
+        ss << "Renaming:" << std::endl;
+        for (auto it : ren.ren) {
+            ss << "\t" << it.first << " => " << it.second << std::endl;
+        }
         throw ss.str();
     }
 }
@@ -521,12 +532,12 @@ void value_t::unify_RIG(std::size_t, std::size_t, spine_t&) {
     throw ss.str();
 }
 void vrig_t::unify_RIG(std::size_t l, std::size_t m, spine_t& spine1) {
-    if (m == level) {
+    if (m == level && spine.size() == spine1.size()) {
         UNIFYSP
     }
     else {
         std::stringstream ss("");
-        ss << "Unification error: rigid mismatch between VRIGID and VRIGID " << *this;
+        ss << "Unification error: rigid mismatch between VRIGID ?" << m << " and VRIGID " << *this;
         throw ss.str();
     }
 }
@@ -549,7 +560,7 @@ void vflex_t::unify_RIG(std::size_t l, std::size_t level, spine_t& spine1) {
     }
     else {
         std::stringstream ss("");
-        ss << "Unification error: escaping FLEX ?" << level << " " << ren.ren[level] << std::endl;
+        ss << "Unification error: escaping FLEX ?" << level << " " << std::endl;
         ss << "Renaming:" << std::endl;
         for (auto it : ren.ren) {
             ss << "\t" << it.first << " => " << it.second << std::endl;

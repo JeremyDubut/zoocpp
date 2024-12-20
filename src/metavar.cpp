@@ -65,7 +65,7 @@ renaming_t::renaming_t(std::size_t l, spine_t& spine) {
             fsp.push_back(std::make_pair(x,it->second));
         }
         else {
-            ren[dom] = x;
+            ren[x] = dom;
             dom++;
             fsp.push_back(std::make_pair(x,it->second));
         }
