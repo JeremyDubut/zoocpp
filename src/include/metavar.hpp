@@ -15,6 +15,7 @@ struct metaentry_t {
     virtual value_ptr get_value(value_ptr,spine_t&);
     virtual value_ptr get_value(std::size_t);
     virtual meta_ptr update(value_ptr);
+    virtual value_ptr read_unsolved();
 
 };
 struct solvedmeta_t : metaentry_t{
@@ -27,6 +28,7 @@ struct solvedmeta_t : metaentry_t{
     value_ptr get_value(value_ptr,spine_t&);
     value_ptr get_value(std::size_t);
     meta_ptr update(value_ptr);
+    value_ptr read_unsolved();
 
 };
 std::ostream& operator<< (std::ostream&, metaentry_t&);
@@ -51,6 +53,7 @@ struct renaming_t {
     std::optional<prunings_t> prune;
 
     renaming_t() : dom {0}, cod {0}, ren {renamingFun_t()}, prune{std::optional<prunings_t>()} {}
+    renaming_t(prunings_t& prune) : dom {0}, cod {0}, ren {renamingFun_t()}, prune{prune} {}
     void lift();
     void skip();
     void pop();

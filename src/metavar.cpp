@@ -80,7 +80,12 @@ renaming_t::renaming_t(std::size_t l, spine_t& spine) {
             prune_val.push_back(Explicit);
         }
     }
-    prune = std::optional<prunings_t>(prune_val);
+    if (nlvars.empty()) {
+        prune = std::optional<prunings_t>();
+    }
+    else {
+        prune = std::optional<prunings_t>(prune_val);
+    }
 }
 
 std::ostream& metaentry_t::to_string(std::ostream& out) {
@@ -91,4 +96,11 @@ std::ostream& solvedmeta_t::to_string(std::ostream& out) {
 }
 std::ostream& operator<< (std::ostream& out, metaentry_t& m) {
     return m.to_string(out);
+}
+
+value_ptr metaentry_t::read_unsolved() {
+    return typ;
+}
+value_ptr solvedmeta_t::read_unsolved() {
+    throw "Unification error: trying to prune solved metavariable";
 }

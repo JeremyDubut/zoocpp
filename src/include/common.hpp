@@ -62,6 +62,7 @@ typedef std::vector<pruning_t> prunings_t;
 
 // some common macros
 #define FRESHMETA(typ) std::make_shared<imeta_t>(typ,cont.flags)
+#define NEWMETA(typ) std::make_shared<meta_t>(metavar_t(typ).id)
 #define VU std::make_shared<vu_t>()
 #define CAPP(v,body,val) \
     body.environment.push_back(v); \

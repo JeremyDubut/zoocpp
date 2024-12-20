@@ -367,33 +367,93 @@ std::size_t vrig_t::inverse() {
     throw "Unification error: variable with non-empty spine in inverse";
 }
 
-term_ptr value_t::rename(std::size_t,renaming_t&) {
+term_ptr wrapAbs(std::size_t level, value_ptr typ, term_ptr term) {
+    return typ->force()->wrapAbsRec(level,0,term);
+}
+term_ptr value_t::wrapAbsRec(std::size_t l, std::size_t lp, term_ptr term) {
+    if (l == lp) {
+        return term;
+    }
+    else {
+        throw "Unification error: Trying to wrap a term that does not have a pi type";
+    }
+}
+term_ptr vpi_t::wrapAbsRec(std::size_t l, std::size_t lp, term_ptr term) {
+    if (l == lp) {
+        return term;
+    }
+    else {
+        TCAPP(std::make_shared<vrig_t>(lp));
+        term_ptr lterm = val->force()->wrapAbsRec(l,lp+1,term);
+        if (var == "_") {
+            std::stringstream ss("");
+            ss << "x" << lp;
+            name_t name = ss.str();
+            return std::make_shared<abs_t>(name,lterm);
+        }
+        else {
+            return std::make_shared<abs_t>(var,lterm);
+        }
+    }
+}
+term_ptr vipi_t::wrapAbsRec(std::size_t l, std::size_t lp, term_ptr term) {
+    if (l == lp) {
+        return term;
+    }
+    else {
+        TCAPP(std::make_shared<vrig_t>(lp));
+        term_ptr lterm = val->force()->wrapAbsRec(l,lp+1,term);
+        if (var == "_") {
+            std::stringstream ss("");
+            ss << "x" << lp;
+            name_t name = ss.str();
+            return std::make_shared<iabs_t>(name,lterm);
+        }
+        else {
+            return std::make_shared<iabs_t>(var,lterm);
+        }
+    }
+}
+
+std::size_t pruneMeta(prunings_t& prune, std::size_t level) {
+    value_ptr mtyp = metavar_t::lookup(level)->read_unsolved();
+    environment_t env {};
+    value_ptr ptyp = mtyp->pruneTy(prune)->eval(env);
+    std::size_t newl = metavar_t(ptyp).id;
+    term_ptr presol = std::make_shared<appp_t>(std::make_shared<meta_t>(newl),prune);
+    value_ptr sol = wrapAbs(prune.size(),mtyp,presol)->eval(env);
+    meta_ptr me = metavar_t::lookup(level)->update(sol); \
+    metavar_t::lookupTable[level] = me;
+    return newl;
+}
+
+term_ptr value_t::rename(std::optional<std::size_t>,renaming_t&) {
     throw "Unification error: Renaming in unknown value";
 }
-term_ptr vu_t::rename(std::size_t,renaming_t&) {
+term_ptr vu_t::rename(std::optional<std::size_t>,renaming_t&) {
     return std::make_shared<u_t>();
 }
-term_ptr vabs_t::rename(std::size_t m,renaming_t& ren) {
+term_ptr vabs_t::rename(std::optional<std::size_t> m,renaming_t& ren) {
     RENAMEABS(abs_t)
 }
-term_ptr viabs_t::rename(std::size_t m,renaming_t& ren) {
+term_ptr viabs_t::rename(std::optional<std::size_t> m,renaming_t& ren) {
     RENAMEABS(iabs_t)
 }
-term_ptr vpi_t::rename(std::size_t m,renaming_t& ren) {
+term_ptr vpi_t::rename(std::optional<std::size_t> m,renaming_t& ren) {
     RENAMEPI(pi_t)
 }
-term_ptr vipi_t::rename(std::size_t m,renaming_t& ren) {
+term_ptr vipi_t::rename(std::optional<std::size_t> m,renaming_t& ren) {
     RENAMEPI(ipi_t)
 }
-term_ptr vflex_t::rename(std::size_t m,renaming_t& ren) {
-    if (index == m) {
+term_ptr vflex_t::rename(std::optional<std::size_t> m,renaming_t& ren) {
+    if (m.has_value() && index == m.value()) {
         throw "Unification error: occurs check";
     }
-    RENAMESP(std::make_shared<meta_t>(index),m,spine);
+    RENAMESP(std::make_shared<meta_t>(index),m.value(),spine);
 }
-term_ptr vrig_t::rename(std::size_t m,renaming_t& ren) {
+term_ptr vrig_t::rename(std::optional<std::size_t> m,renaming_t& ren) {
     if (ren.ren.contains(level)) {
-        RENAMESP(std::make_shared<var_t>(ren.dom-ren.ren[level]-1),m,spine)
+        RENAMESP(std::make_shared<var_t>(ren.dom-ren.ren[level]-1),m.value(),spine)
     }
     else {
         std::stringstream ss("");
@@ -604,3 +664,54 @@ inferrance_t vipi_t::insert(context_t& cont,term_ptr term) {
 }
 
 raw_ptr value_t::display() {return quote(0)->display();}
+
+term_ptr value_t::pruneTy(prunings_t& prune) {
+    renaming_t ren = renaming_t(prune);
+    return force()->pruneTyRec(0,ren);
+}
+term_ptr value_t::pruneTyRec(std::size_t i, renaming_t& ren) {
+    if (ren.prune.value().size() == i) {
+        return this->rename(std::optional<size_t>(),ren);
+    }
+    else {
+        throw "Unification error: Pruning a non-pi type";
+    }
+}
+term_ptr vpi_t::pruneTyRec(std::size_t i, renaming_t& ren) {
+    if (ren.prune.value().size() == i) {
+        return this->rename(std::optional<size_t>(),ren);
+    }
+    else {
+        size_t l = ren.cod;
+        VTCAPP;
+        switch (ren.prune.value()[i]) {
+            case (None): {
+                ren.skip();
+                return val->force()->pruneTyRec(i+1,ren);
+            }
+            default: {
+                ren.lift();
+                return std::make_shared<pi_t>(var,typ->rename(std::optional<std::size_t>(),ren),val->force()->pruneTyRec(i+1,ren));
+            }
+        }
+    }
+}
+term_ptr vipi_t::pruneTyRec(std::size_t i, renaming_t& ren) {
+    if (ren.prune.value().size() == i) {
+        return this->rename(std::optional<size_t>(),ren);
+    }
+    else {
+        size_t l = ren.cod;
+        VTCAPP;
+        switch (ren.prune.value()[i]) {
+            case (None): {
+                ren.skip();
+                return val->force()->pruneTyRec(i+1,ren);
+            }
+            default: {
+                ren.lift();
+                return std::make_shared<ipi_t>(var,typ->rename(std::optional<std::size_t>(),ren),val->force()->pruneTyRec(i+1,ren));
+            }
+        }
+    }
+}

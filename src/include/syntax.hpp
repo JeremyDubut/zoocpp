@@ -192,6 +192,7 @@ struct appp_t : term_t {
     prunings_t prune;
 
     appp_t(term_ptr left) : left{left}, prune{prunings_t()} {}
+    appp_t(term_ptr left, prunings_t& prune) : left{left}, prune{prune} {}
     std::ostream& to_string(std::ostream&);
     value_ptr eval(environment_t&);
 
