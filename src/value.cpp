@@ -427,6 +427,103 @@ std::size_t pruneMeta(prunings_t& prune, std::size_t level) {
     return newl;
 }
 
+
+term_ptr pruneVflex(std::optional<std::size_t> m, renaming_t& ren, std::size_t mp, spine_t& spine) {
+    tspine_t tspine {};
+    status_t status = OK;
+    for (auto it : spine) {
+       it.first->force()->pruneVflexCases(m, ren, it.second, status, tspine);
+    }
+    std::size_t mpp;
+    if (status == NeedsPruning) {
+        prunings_t prune {};
+        for (auto it : tspine) {
+            if (!it.first.has_value()) {
+                prune.push_back(None);
+            }
+            else if (it.second) {
+                prune.push_back(Implicit);
+            }
+            else {
+                prune.push_back(Explicit);
+            }
+        }
+        mpp = pruneMeta(prune,mp);
+    }
+    else {
+        metavar_t::lookup(mp)->read_unsolved();
+        mpp = mp;
+    }
+    term_ptr res = std::make_shared<meta_t>(mpp);
+    for (auto it : tspine) {
+        if (it.first.has_value()) {
+            if (it.second) {
+                res = std::make_shared<iapp_t>(res,it.first.value());
+            }
+            else {
+                res = std::make_shared<app_t>(res,it.first.value());
+            }
+        }
+    }
+    return res;
+}
+void value_t::pruneVflexCases(
+    std::optional<std::size_t> m,
+    renaming_t& ren,
+    bool icit,
+    status_t& status,
+    tspine_t& tspine) {
+
+    switch (status) {
+        case NeedsPruning: {
+            throw "Unification error: pruning a non-variable";
+        }
+        default: {
+            tspine.push_back(std::make_pair(rename(m,ren),icit));
+            status = OK_NonRenaming;
+        }
+    }
+}
+void vrig_t::pruneVflexCases(
+    std::optional<std::size_t> m,
+    renaming_t& ren,
+    bool icit,
+    status_t& status,
+    tspine_t& tspine) {
+
+    if (spine.empty()) {
+        if (ren.ren.contains(level)) {
+            tspine.push_back(std::make_pair(std::make_shared<var_t>(ren.dom-ren.ren[level]-1),icit));
+        }
+        else if (status == OK_NonRenaming) {
+            throw "Unification error: spine is not a renaming in pruning";
+        }
+        else {
+            tspine.push_back(std::make_pair(std::optional<term_ptr>(),icit));
+            status = OK_NonRenaming;
+        }
+    }
+    else {
+        switch (status) {
+            case NeedsPruning: {
+                throw "Unification error: pruning a RIG with non-empty spine";
+            }
+            default: {
+                if (ren.ren.contains(level)) {
+                    RENAMESP_NORET(std::make_shared<var_t>(ren.dom-ren.ren[level]-1),m.value(),spine)
+                    tspine.push_back(std::make_pair(trhs,icit));
+                    status = OK_NonRenaming;
+                }
+                else {
+                    std::stringstream ss("");
+                    ss << "Unification error: espacing variable " << *this;
+                    throw ss.str();
+                }
+            }
+        }
+    }
+}
+
 term_ptr value_t::rename(std::optional<std::size_t>,renaming_t&) {
     throw "Unification error: Renaming in unknown value";
 }
@@ -449,7 +546,7 @@ term_ptr vflex_t::rename(std::optional<std::size_t> m,renaming_t& ren) {
     if (m.has_value() && index == m.value()) {
         throw "Unification error: occurs check";
     }
-    RENAMESP(std::make_shared<meta_t>(index),m.value(),spine);
+    return pruneVflex(m,ren,index,spine);
 }
 term_ptr vrig_t::rename(std::optional<std::size_t> m,renaming_t& ren) {
     if (ren.ren.contains(level)) {

@@ -68,6 +68,7 @@ struct value_t : std::enable_shared_from_this<value_t> {
     virtual term_ptr rename(std::optional<std::size_t>,renaming_t&);
     void solve(std::size_t,std::size_t,spine_t&);
     virtual term_ptr wrapAbsRec(std::size_t,std::size_t,term_ptr);
+    virtual void pruneVflexCases(std::optional<std::size_t>,renaming_t&,bool,status_t&,tspine_t&);
 };
 std::ostream& operator<< (std::ostream&, value_t&);
 std::ostream& operator<< (std::ostream&, const environment_t&);
@@ -217,4 +218,5 @@ struct vrig_t : value_t {
     term_ptr rename(std::optional<std::size_t>,renaming_t&);
     void unify(std::size_t,value_ptr);
     void unify_RIG(std::size_t,std::size_t,spine_t&);
+    void pruneVflexCases(std::optional<std::size_t>,renaming_t&,bool,status_t&,tspine_t&);
 };

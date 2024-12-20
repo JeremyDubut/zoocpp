@@ -59,6 +59,8 @@ typedef std::vector<std::pair<value_ptr,bool>> spine_t;
 typedef std::unordered_map<std::size_t,std::size_t> renamingFun_t;
 enum pruning_t { Implicit, Explicit, None };
 typedef std::vector<pruning_t> prunings_t;
+enum status_t { OK, OK_NonRenaming, NeedsPruning};
+typedef std::vector<std::pair<std::optional<term_ptr>,bool>> tspine_t;
 
 // some common macros
 #define FRESHMETA(typ) std::make_shared<imeta_t>(typ,cont.flags)
