@@ -55,21 +55,19 @@ renaming_t::renaming_t(std::size_t l, spine_t& spine) {
     prunings_t prune_val {};
     std::unordered_set<std::size_t> nlvars {};
     std::vector<std::pair<std::size_t,bool>> fsp {};
-    auto it = spine.end()-1;
-    while (it != spine.begin()-1) {
-        std::size_t x = it->first->clone()->force()->inverse();
+    for (auto it : spine) {
+        std::size_t x = it.first->clone()->force()->inverse();
         if (ren.contains(x) || nlvars.contains(x)) {
             dom++;
             ren.erase(x);
             nlvars.insert(x);
-            fsp.push_back(std::make_pair(x,it->second));
+            fsp.push_back(std::make_pair(x,it.second));
         }
         else {
             ren[x] = dom;
             dom++;
-            fsp.push_back(std::make_pair(x,it->second));
+            fsp.push_back(std::make_pair(x,it.second));
         }
-        it = it-1;
     }
     for (auto it2 : fsp) {
         if (nlvars.contains(it2.first)) {

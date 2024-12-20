@@ -537,7 +537,7 @@ void vrig_t::unify_RIG(std::size_t l, std::size_t m, spine_t& spine1) {
     }
     else {
         std::stringstream ss("");
-        ss << "Unification error: rigid mismatch between VRIGID ?" << m << " and VRIGID " << *this;
+        ss << "Unification error: rigid mismatch between VRIGID ?" << m << " and VRIGID ?" << level;
         throw ss.str();
     }
 }

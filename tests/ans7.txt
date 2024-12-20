@@ -33,4 +33,4 @@ Let refl : {A : ?_} → {x : A} → ((Eq x) x) = λ_ λpx px in
 Let sym : {A : ?_} → {x : ?_} → {y : ?_} → (_ : (((Eq {A}) x) y)) → ((Eq y) x) = λ{A} λ{x} λ{y} λp ((p λy ((Eq y) x)) refl) in
 ((the ((Eq ((mul ten) ten)) ten)) refl)
 =================
-Error: Unification error: rigid mismatch between VRIGID and VRIGID ?35
+Error: Unification error: rigid mismatch between VRIGID ?36 and VRIGID ?35
