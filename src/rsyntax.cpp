@@ -65,37 +65,37 @@ std::ostream& operator<< (std::ostream& out, context_t& cont) {
 
 term_ptr raw_t::check(context_t& cont,value_ptr typ) {
     LOG("Checking term " << *this << " with type " << *typ);
-    term_ptr res = typ->check_RAW(cont,shared_from_this());
+    term_ptr res = typ->force()->check_RAW(cont,shared_from_this());
     LOG("Type checking of term " << *this << " with type " << *typ << " successful");
     return res;
 }
 term_ptr rabs_t::check(context_t& cont,value_ptr v) {
     LOG("Checking Explicit Lam " << *this << " with type " << *v);
-    term_ptr res = v->check_RABS(cont,var,body);
+    term_ptr res = v->force()->check_RABS(cont,var,body);
     LOG("Type check of Explicit Lam " << *this << " with type " << *v << " successful");
     return res;
 }
 term_ptr riabs_t::check(context_t& cont,value_ptr v) {
     LOG("Checking Implicit Lam " << *this << " with type " << *v);
-    term_ptr res = v->check_RIABS(cont,var,body);
+    term_ptr res = v->force()->check_RIABS(cont,var,body);
     LOG("Type check of Implicit Lam " << *this << " with type " << *v << " successful");
     return res;
 }
 term_ptr rnabs_t::check(context_t& cont,value_ptr v) {
     LOG("Checking Named Implicit Lam " << *this << " with type " << *v);
-    term_ptr res = v->check_RNABS(cont,var,ivar,body);
+    term_ptr res = v->force()->check_RNABS(cont,var,ivar,body);
     LOG("Type check of Named Implicit Lam " << *this << " with type " << *v << " successful");
     return res;
 }
 term_ptr rlet_t::check(context_t& cont,value_ptr v) {
     LOG("Checking Let " << var << " : " << *typ << " = " << *def << " in [...] with type " << *v);
-    term_ptr res = v->check_LET(cont,var,typ,def,body);
+    term_ptr res = v->force()->check_LET(cont,var,typ,def,body);
     LOG("Type check of Let " << var << " : " << *typ << " = " << *def << " in [...] with type " << *v << " successful");
     return res;
 }
 term_ptr rhole_t::check(context_t& cont,value_ptr v) {
     LOG("Checking Hole");
-    term_ptr res = v->check_HOLE(cont);
+    term_ptr res = v->force()->check_HOLE(cont);
     LOG("Type check of hole successful");
     return res;
 }

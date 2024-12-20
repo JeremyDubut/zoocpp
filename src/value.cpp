@@ -21,7 +21,7 @@
 #define QUOTESP(v) \
     FUNSP(v,quote(l),spine)\
     return trhs; 
-#define RENAMESP_NORET(v,m,spine) FUNSP(v,rename(m,ren),spine)
+#define RENAMESP_NORET(v,m,spine) FUNSP(v,force()->rename(m,ren),spine)
 #define RENAMESP(v,m,spine) \
     RENAMESP_NORET(v,m,spine) \
     return trhs;
@@ -29,7 +29,7 @@
     auto it1 = spine1.begin(); \
     for (auto it : spine) { \
         LOG("Unifying spine: " << *(*it1).first << " and " << *it.first); \
-        (*it1).first->clone()->unify(l,it.first->clone()); \
+        (*it1).first->clone()->force()->unify(l,it.first->clone()); \
         it1++; \
     }
 #define SOLVE(dom) \
@@ -54,16 +54,16 @@
     std::size_t l = ren.cod; \
     VTCAPP; \
     ren.lift(); \
-    term_ptr res = val->rename(m,ren); \
+    term_ptr res = val->force()->rename(m,ren); \
     ren.pop(); \
     return std::make_shared<t>(var,res);
 #define RENAMEPI(t) \
     std::size_t l = ren.cod; \
     VTCAPP; \
     ren.lift(); \
-    term_ptr res = val->rename(m,ren); \
+    term_ptr res = val->force()->rename(m,ren); \
     ren.pop(); \
-    return std::make_shared<t>(var,typ->rename(m,ren),res);
+    return std::make_shared<t>(var,typ->force()->rename(m,ren),res);
 
 
 std::ostream& value_t::to_string(std::ostream& out) {return out << "Unknown value";}
@@ -181,7 +181,7 @@ term_ptr vpi_t::check_RABS(context_t& cont,name_t var, raw_ptr r) {
 term_ptr vipi_t::check_RABS(context_t& cont,name_t var, raw_ptr r) {
     cont.new_bind(this->var,this->typ);
     TCAPP(std::make_shared<vrig_t>(cont.level-1));
-    term_ptr res = std::make_shared<iabs_t>(this->var, val->check_RABS(cont,var,r));
+    term_ptr res = std::make_shared<iabs_t>(this->var, val->force()->check_RABS(cont,var,r));
     cont.pop(this->var);
     return res;
 }
@@ -221,7 +221,7 @@ term_ptr vipi_t::check_RNABS(context_t& cont,name_t var, name_t ivar, raw_ptr r)
     else {
         cont.new_bind(this->var,this->typ);
         TCAPP(std::make_shared<vrig_t>(cont.level-1));
-        term_ptr res = std::make_shared<iabs_t>(this->var, val->check_RNABS(cont,var,ivar,r));
+        term_ptr res = std::make_shared<iabs_t>(this->var, val->force()->check_RNABS(cont,var,ivar,r));
         cont.pop(this->var);
         return res;
     }
@@ -241,7 +241,7 @@ term_ptr value_t::check_LET(context_t& cont,name_t var,raw_ptr typ,raw_ptr def,r
 term_ptr vipi_t::check_LET(context_t& cont,name_t var,raw_ptr typ,raw_ptr def,raw_ptr body) {
     cont.new_bind(this->var,this->typ);
     TCAPP(std::make_shared<vrig_t>(cont.level-1));
-    term_ptr res = std::make_shared<iabs_t>(this->var, val->check_LET(cont,var,typ,def,body));
+    term_ptr res = std::make_shared<iabs_t>(this->var, val->force()->check_LET(cont,var,typ,def,body));
     cont.pop(this->var);
     return res;
 }
@@ -253,7 +253,7 @@ term_ptr value_t::check_HOLE(context_t& cont) {
 term_ptr vipi_t::check_HOLE(context_t& cont) {
     cont.new_bind(this->var,this->typ);
     TCAPP(std::make_shared<vrig_t>(cont.level-1));
-    term_ptr res = std::make_shared<iabs_t>(this->var, val->check_HOLE(cont));
+    term_ptr res = std::make_shared<iabs_t>(this->var, val->force()->check_HOLE(cont));
     cont.pop(this->var);
     return res;
 }
@@ -416,6 +416,7 @@ term_ptr vipi_t::wrapAbsRec(std::size_t l, std::size_t lp, term_ptr term) {
 }
 
 std::size_t pruneMeta(prunings_t& prune, std::size_t level) {
+    LOG("Pruning metavariable " << level);
     value_ptr mtyp = metavar_t::lookup(level)->read_unsolved();
     environment_t env {};
     value_ptr ptyp = mtyp->pruneTy(prune)->eval(env);
@@ -429,6 +430,7 @@ std::size_t pruneMeta(prunings_t& prune, std::size_t level) {
 
 
 term_ptr pruneVflex(std::optional<std::size_t> m, renaming_t& ren, std::size_t mp, spine_t& spine) {
+    LOG("Pruning flex " << mp);
     tspine_t tspine {};
     status_t status = OK;
     for (auto it : spine) {
@@ -576,53 +578,57 @@ void value_t::unify(std::size_t,value_ptr) {
     throw ss.str();
 }
 void vabs_t::unify(std::size_t l,value_ptr v) {
-    LOG("Unifying Explicit Lam " << *this->quote(0) << " with " << *v->quote(0));  
-    v->unify_ABS(l,body);
-    LOG("Unification of Explicit Lam " << *this->quote(0) << " with " << *v->quote(0) << " successful");
+    LOG("Unifying Explicit Lam " << *this->quote(l) << " with " << *v->quote(l));  
+    v->force()->unify_ABS(l,body);
+    LOG("Unification of Explicit Lam " << *this->quote(l) << " with " << *v->quote(l) << " successful");
 }
 void viabs_t::unify(std::size_t l,value_ptr v) {
-    LOG("Unifying Implicitl Lam " << *this->quote(0) << " with " << *v->quote(0)); 
-    v->unify_IABS(l,body);
-    LOG("Unification of Implicit Lam " << *this->quote(0) << " with " << *v->quote(0) << " successful");
+    LOG("Unifying Implicitl Lam " << *this->quote(l) << " with " << *v->quote(l)); 
+    v->force()->unify_IABS(l,body);
+    LOG("Unification of Implicit Lam " << *this->quote(l) << " with " << *v->quote(l) << " successful");
 }
 void vu_t::unify(std::size_t,value_ptr v) {
-    v->unify_U();
+    v->force()->unify_U();
 }
 void vpi_t::unify(std::size_t l,value_ptr v) {
-    LOG("Unifying Explicit Pi " << *this->quote(0) << " with " << *v->quote(0)); 
-    v->unify_PI(l,var,typ,body);
-    LOG("Unification of Explicit Pi " << *this->quote(0) << " with " << *v->quote(0) << " successful");
+    LOG("Unifying Explicit Pi " << *this->quote(l) << " with " << *v->quote(l)); 
+    v->force()->unify_PI(l,var,typ,body);
+    LOG("Unification of Explicit Pi " << *this->quote(l) << " with " << *v->quote(l) << " successful");
 }
 void vipi_t::unify(std::size_t l,value_ptr v) {
-    LOG("Unifying Implicit Pi " << *this->quote(0) << " with " << *v->quote(0)); 
-    v->unify_IPI(l,var,typ,body);
-    LOG("Unification of Implicit Pi " << *this->quote(0) << " with " << *v->quote(0) << " successful");
+    LOG("Unifying Implicit Pi " << *this->quote(l) << " with " << *v->quote(l)); 
+    v->force()->unify_IPI(l,var,typ,body);
+    LOG("Unification of Implicit Pi " << *this->quote(l) << " with " << *v->quote(l) << " successful");
 }
 void vrig_t::unify(std::size_t l,value_ptr v) {
-    v->unify_RIG(l,level,spine);
+    LOG("Unifying RIG " << *this->quote(l) << " with " << *v->quote(l)); 
+    v->force()->unify_RIG(l,level,spine);
+    LOG("Unification of RIG " << *this->quote(l) << " with " << *v->quote(l) << " successful");
 }
 void vflex_t::unify(std::size_t l,value_ptr v) {
-    v->unify_FLEX(l,index,spine);
+    LOG("Unifying FLEX " << *this->quote(l) << " with " << *v->quote(l)); 
+    v->force()->unify_FLEX(l,index,spine);
+    LOG("Unification of FLEX " << *this->quote(l) << " with " << *v->quote(l) << " successful");
 }
 
 void value_t::unify_ABS(std::size_t l ,closure_t& body) {
     VCAPP(body,val)
-    val->force()->unify(l+1,vApp(VARL,false)->force());
+    val->force()->unify(l+1,vApp(VARL,false));
 }
 // Since viabs_t inherits from vabs_t, the same applies
 void vabs_t::unify_ABS(std::size_t l ,closure_t& body1) {
     VCAPP(body1,val1)
     VTCAPP
-    val1->force()->unify(l+1,val->force());
+    val1->force()->unify(l+1,val);
 }
 void value_t::unify_IABS(std::size_t l ,closure_t& body) {
     VCAPP(body,val)
-    val->force()->unify(l+1,vApp(VARL,true)->force());
+    val->force()->unify(l+1,vApp(VARL,true));
 }
 void vabs_t::unify_IABS(std::size_t l ,closure_t& body1) {
     VCAPP(body1,val1)
     VTCAPP
-    val1->force()->unify(l+1,val->force());
+    val1->force()->unify(l+1,val);
 }
 void value_t::unify_U() {
     std::stringstream ss("");
@@ -642,10 +648,10 @@ void value_t::unify_PI(std::size_t,name_t,value_ptr,closure_t&) {
     throw ss.str();
 }
 void vpi_t::unify_PI(std::size_t l,name_t,value_ptr typ1,closure_t& body1) {
-    typ1->force()->unify(l,typ->force());
+    typ1->force()->unify(l,typ);
     VCAPP(body1,val1)
     VTCAPP
-    val1->force()->unify(l+1,val->force());
+    val1->force()->unify(l+1,val);
 }
 void vipi_t::unify_PI(std::size_t,name_t,value_ptr,closure_t&) {
     throw "Unification error: icit mismatch in pi";
@@ -656,9 +662,9 @@ void vflex_t::unify_PI(std::size_t level, name_t var, value_ptr typ,closure_t& b
     std::size_t l = ren.cod;
     VCAPP(body,val);
     ren.lift();
-    term_ptr res = val->rename(index,ren);
+    term_ptr res = val->force()->rename(index,ren);
     ren.pop();
-    term_ptr trhs = std::make_shared<pi_t>(var,typ->rename(index,ren),res);
+    term_ptr trhs = std::make_shared<pi_t>(var,typ->force()->rename(index,ren),res);
     SOLVE(ren.dom)
 }
 void value_t::unify_IPI(std::size_t,name_t,value_ptr,closure_t&) {
@@ -667,10 +673,10 @@ void value_t::unify_IPI(std::size_t,name_t,value_ptr,closure_t&) {
     throw ss.str();
 }
 void vipi_t::unify_IPI(std::size_t l,name_t,value_ptr typ1,closure_t& body1) {
-    typ1->force()->unify(l,typ->force());
+    typ1->force()->unify(l,typ);
     VCAPP(body1,val1)
     VTCAPP
-    val1->force()->unify(l+1,val->force());
+    val1->force()->unify(l+1,val);
 }
 void vflex_t::unify_IPI(std::size_t level, name_t var, value_ptr typ,closure_t& body) {
     LOG("Solving " << *this << " with implicit pi " << *typ << " and " << body);
@@ -678,9 +684,9 @@ void vflex_t::unify_IPI(std::size_t level, name_t var, value_ptr typ,closure_t& 
     std::size_t l = ren.cod;
     VCAPP(body,val);
     ren.lift();
-    term_ptr res = val->rename(index,ren);
+    term_ptr res = val->force()->rename(index,ren);
     ren.pop();
-    term_ptr trhs = std::make_shared<ipi_t>(var,typ->rename(index,ren),res);
+    term_ptr trhs = std::make_shared<ipi_t>(var,typ->force()->rename(index,ren),res);
     SOLVE(ren.dom)
 }
 void value_t::unify_RIG(std::size_t, std::size_t, spine_t&) {
@@ -701,12 +707,12 @@ void vrig_t::unify_RIG(std::size_t l, std::size_t m, spine_t& spine1) {
 void vabs_t::unify_RIG(std::size_t l, std::size_t m, spine_t& spine) {
     VTCAPP
     spine.push_back(std::make_pair(VARL,false));
-    val->unify_RIG(l+1,m,spine);
+    val->force()->unify_RIG(l+1,m,spine);
 }
 void viabs_t::unify_RIG(std::size_t l, std::size_t m, spine_t& spine) {
     VTCAPP
     spine.push_back(std::make_pair(VARL,true));
-    val->unify_RIG(l+1,m,spine);
+    val->force()->unify_RIG(l+1,m,spine);
 }
 void vflex_t::unify_RIG(std::size_t l, std::size_t level, spine_t& spine1) {
     renaming_t ren = renaming_t(l,spine);
@@ -740,12 +746,12 @@ void vflex_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine1) {
 void vabs_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine) {
     VTCAPP
     spine.push_back(std::make_pair(VARL,false));
-    val->unify_FLEX(l+1,m,spine);
+    val->force()->unify_FLEX(l+1,m,spine);
 }
 void viabs_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine) {
     VTCAPP
     spine.push_back(std::make_pair(VARL,true));
-    val->unify_FLEX(l+1,m,spine);
+    val->force()->unify_FLEX(l+1,m,spine);
 }
 
 inferrance_t value_t::insert(context_t&,term_ptr term) {
@@ -757,7 +763,7 @@ inferrance_t vipi_t::insert(context_t& cont,term_ptr term) {
     cont.new_var(var,a);
     TCAPP(a)
     cont.pop(var);
-    return val->insert(cont,std::make_shared<iapp_t>(term,m));
+    return val->force()->insert(cont,std::make_shared<iapp_t>(term,m));
 }
 
 raw_ptr value_t::display() {return quote(0)->display();}
@@ -788,7 +794,7 @@ term_ptr vpi_t::pruneTyRec(std::size_t i, renaming_t& ren) {
             }
             default: {
                 ren.lift();
-                return std::make_shared<pi_t>(var,typ->rename(std::optional<std::size_t>(),ren),val->force()->pruneTyRec(i+1,ren));
+                return std::make_shared<pi_t>(var,typ->force()->rename(std::optional<std::size_t>(),ren),val->force()->pruneTyRec(i+1,ren));
             }
         }
     }
@@ -807,7 +813,7 @@ term_ptr vipi_t::pruneTyRec(std::size_t i, renaming_t& ren) {
             }
             default: {
                 ren.lift();
-                return std::make_shared<ipi_t>(var,typ->rename(std::optional<std::size_t>(),ren),val->force()->pruneTyRec(i+1,ren));
+                return std::make_shared<ipi_t>(var,typ->force()->rename(std::optional<std::size_t>(),ren),val->force()->pruneTyRec(i+1,ren));
             }
         }
     }
