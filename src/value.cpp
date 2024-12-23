@@ -164,7 +164,7 @@ term_ptr vipi_t::check_RABS(context_t& cont,name_t var, raw_ptr r) {
     cont.new_bind(this->var,this->typ);
     TCAPP(std::make_shared<vrig_t>(cont.level-1));
     term_ptr res = std::make_shared<iabs_t>(this->var, val->force()->check_RABS(cont,var,r));
-    cont.pop(this->var);
+    cont.pop();
     return res;
 }
 term_ptr value_t::check_RIABS(context_t& cont,name_t var, raw_ptr body) {
@@ -204,7 +204,7 @@ term_ptr vipi_t::check_RNABS(context_t& cont,name_t var, name_t ivar, raw_ptr r)
         cont.new_bind(this->var,this->typ);
         TCAPP(std::make_shared<vrig_t>(cont.level-1));
         term_ptr res = std::make_shared<iabs_t>(this->var, val->force()->check_RNABS(cont,var,ivar,r));
-        cont.pop(this->var);
+        cont.pop();
         return res;
     }
 }
@@ -214,7 +214,7 @@ term_ptr value_t::check_LET(context_t& cont,name_t var,raw_ptr typ,raw_ptr def,r
     value_ptr va = ta->eval(cont.environment);
     term_ptr tt = def->check(cont,va);
     value_ptr vt = tt->eval(cont.environment);
-    cont.new_val(var,va,vt);
+    cont.new_val(var,ta,va,tt,vt);
     term_ptr tu = body->check(cont,shared_from_this());
     cont.pop(var);
     term_ptr res = std::make_shared<let_t>(var,ta,tt,tu);
@@ -224,7 +224,7 @@ term_ptr vipi_t::check_LET(context_t& cont,name_t var,raw_ptr typ,raw_ptr def,ra
     cont.new_bind(this->var,this->typ);
     TCAPP(std::make_shared<vrig_t>(cont.level-1));
     term_ptr res = std::make_shared<iabs_t>(this->var, val->force()->check_LET(cont,var,typ,def,body));
-    cont.pop(this->var);
+    cont.pop();
     return res;
 }
 
@@ -236,7 +236,7 @@ term_ptr vipi_t::check_HOLE(context_t& cont) {
     cont.new_bind(this->var,this->typ);
     TCAPP(std::make_shared<vrig_t>(cont.level-1));
     term_ptr res = std::make_shared<iabs_t>(this->var, val->force()->check_HOLE(cont));
-    cont.pop(this->var);
+    cont.pop();
     return res;
 }
 
@@ -251,7 +251,7 @@ term_ptr vipi_t::check_RAW(context_t& cont,raw_ptr r) {
     VTCAPP
     cont.new_bind(var,typ);
     term_ptr res = r->check(cont,val);
-    cont.pop(var);
+    cont.pop();
     return std::make_shared<iabs_t>(var,res);
 }
 

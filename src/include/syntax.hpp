@@ -2,34 +2,7 @@
 #include "common.hpp"
 #include "metavar.hpp"
 
-// Locals
-struct locals_t {
 
-    virtual ~locals_t() {}
-    virtual term_ptr closety(term_ptr);
-
-};
-struct lbind_t : locals_t {
-
-    locals_ptr mcl;
-    name_t var;
-    term_ptr typ;
-
-    lbind_t(locals_ptr& mcl, name_t& var, term_ptr typ) : var{var}, typ{typ} {this->mcl = std::move(mcl);}
-    term_ptr closety(term_ptr);
-
-};
-struct ldefine_t : locals_t {
-
-    locals_ptr mcl;
-    name_t var;
-    term_ptr typ;
-    term_ptr def;
-
-    ldefine_t(locals_ptr& mcl, name_t& var, term_ptr typ, term_ptr def) : var{var}, typ{typ}, def{def} {this->mcl = std::move(mcl);}
-    term_ptr closety(term_ptr);
-
-};
 
 // Terms used during the inferrance/check
 // They are the syntax
@@ -40,6 +13,7 @@ struct term_t : std::enable_shared_from_this<term_t> {
     // To print
     virtual std::ostream& to_string(std::ostream&);
     // Evaluate the variables, the applications, ...
+    value_ptr eval();
     virtual value_ptr eval(environment_t&);
     // Weak head normal form
     term_ptr nf(environment_t&);

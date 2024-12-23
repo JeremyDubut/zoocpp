@@ -12,9 +12,8 @@
 struct type_t {
     value_ptr typ;
     std::size_t level;
-    bool source;
 
-    type_t(value_ptr typ, std::size_t level, bool source) : typ{typ}, level{level}, source{source} {}
+    type_t(value_ptr typ, std::size_t level) : typ{typ}, level{level} {}
 };
 
 // The context keep track of the variables seen so far in the scope
@@ -26,18 +25,25 @@ struct context_t {
 
     environment_t environment;
     types_t types;
-    flags_t flags;
     std::size_t level; 
+    locals_ptr local;
+    prunings_t prune;
 
-    context_t() : environment {environment_t()}, types {types_t()}, flags {flags_t()}, level {0} {}
+    context_t() : 
+        environment {environment_t()}, 
+        types {types_t()}, 
+        level {0},
+        local {std::make_unique<locals_t>()},
+        prune {prunings_t()} {}
     // Add a new rigid variable in the context
     void new_var(name_t, value_ptr);
     // Add a new defined by a let variable with the corresponding type
-    void new_val(name_t, value_ptr, value_ptr);
+    void new_val(name_t, term_ptr, value_ptr, term_ptr, value_ptr);
     // Add a new variable from a named implicit argument
     void new_bind(name_t, value_ptr);
     // To properly manage the variables in scope
     void pop(name_t);
+    void pop();
 };
 std::ostream& operator<< (std::ostream& out, context_t& cont);
 

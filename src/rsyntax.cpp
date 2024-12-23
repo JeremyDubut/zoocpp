@@ -23,21 +23,27 @@ name_t raw_t::get_name() const {return "Unknown name";}
 name_t rvar_t::get_name() const {return name;}
 name_t rhole_t::get_name() const {return "_";}
 
-#define BIND_CONTEXT(v,b,bp) \
-    environment.push_back(v); \
-    types.try_emplace(var,std::vector<type_t>()); \
-    type_t typ{t,level,bp}; \
-    types[var].push_back(typ); \
-    flags.push_back(b); \
-    level++;
 void context_t::new_var(name_t var, value_ptr t) {
-    BIND_CONTEXT(std::make_shared<vrig_t>(level),true,true);
+    environment.push_back(std::make_shared<vrig_t>(level));
+    local = std::make_unique<lbind_t>(local,var,t->quote(level));
+    prune.push_back(Explicit);
+    type_t typ{t,level}; //TODO
+    types[var].push_back(typ); 
+    level++;
 }
-void context_t::new_val(name_t var, value_ptr t, value_ptr v) {
-    BIND_CONTEXT(v,false,true);
+void context_t::new_val(name_t var, term_ptr ttyp, value_ptr vtyp, term_ptr tdef, value_ptr vdef) { 
+    environment.push_back(vdef);
+    local = std::make_unique<ldefine_t>(local,var,ttyp,tdef); 
+    prune.push_back(None);
+    type_t typ{vtyp,level}; 
+    types[var].push_back(typ); 
+    level++;
 }
 void context_t::new_bind(name_t var, value_ptr t) {
-    BIND_CONTEXT(std::make_shared<vrig_t>(level),true,false);
+    environment.push_back(std::make_shared<vrig_t>(level));
+    local = std::make_unique<lbind_t>(local,var,t->quote(level));
+    prune.push_back(Explicit);
+    level++;
 }
 void context_t::pop(name_t var) {
     environment.pop_back();
@@ -46,7 +52,14 @@ void context_t::pop(name_t var) {
     if (types[var].empty()) {
         types.erase(var);
     }
-    flags.pop_back();
+    prune.pop_back();
+    local = std::move(*local->pop());
+}
+void context_t::pop() {
+    environment.pop_back();
+    level = level-1;
+    prune.pop_back();
+    local = std::move(*local->pop());
 }
 
 // Types take too long to print
@@ -124,22 +137,13 @@ inferrance_t ru_t::infer(context_t&){
     return inferrance_t(std::make_shared<u_t>(), VU);
 }
 inferrance_t rvar_t::infer(context_t& cont){
-    try {
-        LOG("Inferring variable " << name);
+    if (cont.types.contains(name)) {
         auto res = cont.types.at(name).end()-1;
-        while (res != cont.types.at(name).begin()-1 && !res->source) {
-            res = res-1;
-        }
-        if (res != cont.types.at(name).begin()-1) {
-            term_ptr term = std::make_shared<var_t>(cont.level-1-res->level);
-            LOG("Variable  " << name << " inferred with type " << *res->typ);
-            return inferrance_t(term,res->typ->clone());
-        }
-        else {
-            throw "Inferrance error: Unbounded variable "+name;
-        }
+        term_ptr term = std::make_shared<var_t>(cont.level-1-res->level);
+        LOG("Variable  " << name << " inferred with type " << *res->typ);
+        return inferrance_t(term,res->typ->clone());
     }
-    catch (const std::out_of_range& e) {
+    else {
         throw "Inferrance error: Unbounded variable "+name;
     }
 }
@@ -203,7 +207,7 @@ inferrance_t rlet_t::infer(context_t& cont) {
     value_ptr vtyp = ttyp->eval(cont.environment);
     term_ptr tdef = def->check(cont,vtyp);
     value_ptr vdef = tdef->eval(cont.environment);
-    cont.new_val(var,vtyp,vdef);
+    cont.new_val(var,ttyp,vtyp,tdef,vdef);
     inferrance_t inf = body->infer(cont);
     LOG("Let " << var << " : " << *typ << " = " << *def << " in [...] inferred with type " << *inf.typ);
     cont.pop(var);

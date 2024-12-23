@@ -32,8 +32,9 @@ struct type_t;
 struct pibinder_t;
 struct icit;
 struct arg_t;
-struct locals_t;
 struct metaentry_t;
+struct locals_t;
+
 
 // We decided to use share pointers because terms are shared during 
 // evaluation and inferrance through spines and environments
@@ -62,9 +63,43 @@ typedef std::vector<pruning_t> prunings_t;
 enum status_t { OK, OK_NonRenaming, NeedsPruning};
 typedef std::vector<std::pair<std::optional<term_ptr>,bool>> tspine_t;
 
+
+// Locals
+struct locals_t {
+
+    virtual ~locals_t() {}
+    virtual term_ptr closety(term_ptr);
+    virtual std::unique_ptr<locals_ptr> pop();
+
+};
+struct lbind_t : locals_t {
+
+    locals_ptr mcl;
+    name_t var;
+    term_ptr typ;
+
+    lbind_t(locals_ptr& mcl, name_t& var, term_ptr typ) : var{var}, typ{typ} {this->mcl = std::move(mcl);}
+    term_ptr closety(term_ptr);
+    std::unique_ptr<locals_ptr> pop();
+
+};
+struct ldefine_t : locals_t {
+
+    locals_ptr mcl;
+    name_t var;
+    term_ptr typ;
+    term_ptr def;
+
+    ldefine_t(locals_ptr& mcl, name_t& var, term_ptr typ, term_ptr def) : var{var}, typ{typ}, def{def} {this->mcl = std::move(mcl);}
+    term_ptr closety(term_ptr);
+    std::unique_ptr<locals_ptr> pop();
+
+};
+
 // some common macros
-#define FRESHMETA(typ) std::make_shared<imeta_t>(typ,cont.flags)
 #define NEWMETA(typ) std::make_shared<meta_t>(metavar_t(typ).id)
+#define CLOSED(typ) cont.local->closety(typ->quote(cont.level))->eval()
+#define FRESHMETA(typ) std::make_shared<appp_t>(NEWMETA(CLOSED(typ)),cont.prune)
 #define VU std::make_shared<vu_t>()
 #define CAPP(v,body,val) \
     body.environment.push_back(v); \

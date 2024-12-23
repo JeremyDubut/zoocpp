@@ -20,6 +20,10 @@ std::ostream& imeta_t::to_string(std::ostream& out) {return out << "?" << index;
 std::ostream& appp_t::to_string(std::ostream& out) {return out << "(" << *left << " [prunes])";}
 std::ostream& operator<< (std::ostream& out, term_t& term) {return term.to_string(out);}
 
+value_ptr term_t::eval() {
+    environment_t env {};
+    return eval(env);
+}
 value_ptr term_t::eval(environment_t&) {
     throw "Evaluation of an unknown term.";
 }
@@ -166,4 +170,14 @@ term_ptr lbind_t::closety(term_ptr body) {
 }
 term_ptr ldefine_t::closety(term_ptr body) {
     return mcl->closety(std::make_shared<let_t>(var,typ,def,body));
+}
+
+std::unique_ptr<locals_ptr> locals_t::pop() {
+    throw "Cannot pop a empty local";
+}
+std::unique_ptr<locals_ptr> lbind_t::pop() {
+    return std::make_unique<locals_ptr>(std::move(mcl));
+}
+std::unique_ptr<locals_ptr> ldefine_t::pop() {
+    return std::make_unique<locals_ptr>(std::move(mcl));
 }
