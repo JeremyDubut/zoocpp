@@ -750,12 +750,25 @@ void vflex_t::unify_RIG(std::size_t l, std::size_t level, spine_t& spine1) {
 void value_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine) {
     solve(l,m,spine);
 }
+#define FLEXFLEX(m,sp,mp,spp) \
+    try { \
+        renaming_t ren {l,sp}; \
+        std::make_shared<vflex_t>(mp,spp)->solveWithRen(m,ren); \
+    } \
+    catch (std::string e) { \
+        std::make_shared<vflex_t>(m,sp)->solve(l,mp,spp); \
+    }
 void vflex_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine1) {
     if (m == index) {
         UNIFYSP
     }
     else {
-        solve(l,m,spine1);
+        if (spine.size() < spine1.size()) {
+            FLEXFLEX(m,spine1,index,spine)
+        }
+        else {
+            FLEXFLEX(index,spine,m,spine1)
+        }
     }
 }
 void vabs_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine) {
