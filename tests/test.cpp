@@ -1,9 +1,11 @@
 #include "gtest/gtest.h"
+#include "gmock/gmock.h"
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <sstream>
 #include <cstdlib>
+using ::testing::HasSubstr;
 
 // Helper function to run the program and capture output
 std::string runProgramWithInput(const std::string &inputFile) {
@@ -38,15 +40,24 @@ std::string readFile(const std::string &filename) {
 std::vector<std::pair<std::string, std::string>> generateTestFilePairs(int numTests) {
     std::vector<std::pair<std::string, std::string>> filePairs;
     for (int i = 0; i < numTests; ++i) {
-        filePairs.emplace_back("ex" + std::to_string(i) + ".txt", "ans" + std::to_string(i) + ".txt");
+        filePairs.emplace_back("pos" + std::to_string(i) + ".txt", "ans" + std::to_string(i) + ".txt");
     }
     return filePairs;
 }
 
-// Parameterized Test Fixture
-class InferranceTests : public ::testing::TestWithParam<std::pair<std::string, std::string>> {};
+// Helper function to generate list of negative files
+std::vector<std::string> generateNegTestFiles(int numTests) {
+    std::vector<std::string> files;
+    for (int i = 0; i < numTests; ++i) {
+        files.emplace_back("neg" + std::to_string(i) + ".txt");
+    }
+    return files;
+}
 
-TEST_P(InferranceTests, CompareProgramOutput) {
+// Parameterized Test Fixture
+class PositiveTests : public ::testing::TestWithParam<std::pair<std::string, std::string>> {};
+
+TEST_P(PositiveTests, CompareProgramOutput) {
     auto [inputFile, expectedFile] = GetParam();
 
     // Run the program with input and capture the output
@@ -61,9 +72,30 @@ TEST_P(InferranceTests, CompareProgramOutput) {
 
 // Define test cases with input and expected output files
 INSTANTIATE_TEST_SUITE_P(
-    ProgramTests,
-    InferranceTests,
-    ::testing::ValuesIn(generateTestFilePairs(10))
+    ElaborationTests,
+    PositiveTests,
+    ::testing::ValuesIn(generateTestFilePairs(8))
+);
+
+
+// Parameterized Test Fixture
+class NegativeTests : public ::testing::TestWithParam<std::string> {};
+
+TEST_P(NegativeTests, CheckForErrors) {
+    auto inputFile = GetParam();
+
+    // Run the program with input and capture the output
+    std::string actualOutput = runProgramWithInput(inputFile);
+
+    // Compare actual and expected output
+    EXPECT_THAT(actualOutput, HasSubstr("Error:")) << "Error not found in input file: " << inputFile;
+}
+
+// Define test cases with negative input files
+INSTANTIATE_TEST_SUITE_P(
+    ElaborationTests,
+    NegativeTests,
+    ::testing::ValuesIn(generateNegTestFiles(2))
 );
 
 

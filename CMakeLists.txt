@@ -64,6 +64,10 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
+# Ensure GoogleTest and GoogleMock headers are visible
+include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+include_directories(${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
+
 # Add subdirectory for tests
 enable_testing()
 add_subdirectory(tests)

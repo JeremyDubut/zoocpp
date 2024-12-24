@@ -45,7 +45,11 @@ If the tests are ok, you would get something like the following:
 
 
 ## What is working:
-- implemented up to step 4
+- implemented up to step 5
+    - de Bruijn indices and levels
+    - holes
+    - implicit args and lambdas
+    - pruning
 - Google-test suite
 
 # What is not working:
