@@ -46,7 +46,7 @@ struct value_t : std::enable_shared_from_this<value_t> {
     virtual void unify_FLEX(std::size_t,std::size_t,spine_t&);
     // Pruning functions
     term_ptr pruneTy(prunings_t&);
-    term_ptr pruneTyRec(std::size_t,renaming_t&);
+    virtual term_ptr pruneTyRec(std::size_t,renaming_t&);
     // Basically, beta reduction
     virtual value_ptr vApp(value_ptr,bool);
     value_ptr vAppSp(spine_t&);

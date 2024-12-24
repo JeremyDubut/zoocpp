@@ -63,7 +63,7 @@ TEST_P(InferranceTests, CompareProgramOutput) {
 INSTANTIATE_TEST_SUITE_P(
     ProgramTests,
     InferranceTests,
-    ::testing::ValuesIn(generateTestFilePairs(8))
+    ::testing::ValuesIn(generateTestFilePairs(10))
 );
 
 

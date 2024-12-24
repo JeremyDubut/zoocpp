@@ -79,7 +79,7 @@ value_ptr imeta_t::eval(environment_t& env) {
 value_ptr appp_t::eval(environment_t& env) {
     if (env.size() != prune.size()) {
         std::stringstream ss("");
-        ss << "Inconsistency between environments " << env.size() << " and flags " << prune.size();
+        ss << "Inconsistency between environments " << env.size() << " and prunings " << prune.size();
         throw ss.str();
     }
     else {

@@ -261,8 +261,9 @@ std::pair<value_ptr,closure_t> value_t::infer_RAPP(context_t& cont) {
     ss << "x" << this;
     name_t var = ss.str();
     cont.new_var(var,a);
-    closure_t body = closure_t(cont.environment,FRESHMETA(VU)); // Type of FM
+    term_ptr meta = FRESHMETA(VU);
     cont.pop(var);
+    closure_t body = closure_t(cont.environment,meta); // Type of FM
     unify(cont.level,std::make_shared<vpi_t>(var,a,body));
     return std::make_pair(a,body);
 
@@ -281,8 +282,9 @@ std::pair<value_ptr,closure_t> value_t::infer_RINAPP(context_t& cont) {
     ss << "x" << this;
     name_t var = ss.str();
     cont.new_var(var,a);
-    closure_t body = closure_t(cont.environment,FRESHMETA(VU)); // Type of FM
+    term_ptr meta = FRESHMETA(VU);
     cont.pop(var);
+    closure_t body = closure_t(cont.environment,meta); // Type of FM
     unify(cont.level,std::make_shared<vipi_t>(var,a,body));
     return std::make_pair(a,body);
 
@@ -414,7 +416,7 @@ std::size_t pruneMeta(prunings_t& prune, std::size_t level) {
 
 
 term_ptr pruneVflex(std::optional<std::size_t> m, renaming_t& ren, std::size_t mp, spine_t& spine) {
-    LOG("Pruning flex " << mp);
+    LOG("Pruning flex " << *std::make_shared<vflex_t>(mp,spine));
     tspine_t tspine {};
     status_t status = OK;
     for (auto it : spine) {
@@ -482,11 +484,17 @@ void vrig_t::pruneVflexCases(
             tspine.push_back(std::make_pair(std::make_shared<var_t>(ren.dom-ren.ren[level]-1),icit));
         }
         else if (status == OK_NonRenaming) {
-            throw "Unification error: spine is not a renaming in pruning";
+            std::stringstream ss("");
+            ss << "Unification error: spine is not a renaming in pruning with RIG " << level << std::endl;
+            ss << "Renaming:" << std::endl;
+            for (auto it : ren.ren) {
+                ss << "\t" << it.first << " => " << it.second << std::endl;
+            }
+            throw ss.str();
         }
         else {
             tspine.push_back(std::make_pair(std::optional<term_ptr>(),icit));
-            status = OK_NonRenaming;
+            status = NeedsPruning;
         }
     }
     else {
@@ -541,10 +549,6 @@ term_ptr vrig_t::rename(std::optional<std::size_t> m,renaming_t& ren) {
     else {
         std::stringstream ss("");
         ss << "Unification error: escaping RIGID " << *this;
-        ss << "Renaming:" << std::endl;
-        for (auto it : ren.ren) {
-            ss << "\t" << it.first << " => " << it.second << std::endl;
-        }
         throw ss.str();
     }
 }
@@ -556,12 +560,13 @@ void value_t::solveWithRen(std::size_t m, renaming_t& ren) {
         pruneTy(ren.prune.value());
     }
     term_ptr term = force()->rename(m,ren);
+    LOG("Renaming done");
     environment_t env {};
     value_ptr solution = mtyp->wrapAbs(ren.dom,term)->eval(env);
     metavar_t::lookupTable[m] = meta->update(solution);
 }
 void value_t::solve(std::size_t gamma, std::size_t index, spine_t& spine) {
-    LOG("Solving " << index << " with value " << *this);
+    LOG("Solving " << *std::make_shared<vflex_t>(index,spine) << " with value " << *this);
     renaming_t ren = renaming_t(gamma,spine);
     solveWithRen(index,ren);
 }
@@ -600,9 +605,9 @@ void vrig_t::unify(std::size_t l,value_ptr v) {
     LOG("Unification of RIG " << *this->quote(l) << " with " << *v->quote(l) << " successful");
 }
 void vflex_t::unify(std::size_t l,value_ptr v) {
-    LOG("Unifying FLEX " << *this->quote(l) << " with " << *v->quote(l)); 
+    LOG("Unifying FLEX " << *this->quote(l) << " with " << *v); 
     v->force()->unify_FLEX(l,index,spine);
-    LOG("Unification of FLEX " << *this->quote(l) << " with " << *v->quote(l) << " successful");
+    LOG("Unification of FLEX " << *this->quote(l) << " with " << *v << " successful");
 }
 
 void value_t::unify_ABS(std::size_t l ,closure_t& body) {
@@ -729,7 +734,7 @@ void vflex_t::unify_RIG(std::size_t l, std::size_t level, spine_t& spine1) {
         meta_ptr meta = metavar_t::lookup(index);
         value_ptr mtyp = meta->read_unsolved();
         if (ren.prune.has_value()) {
-            pruneTy(ren.prune.value());
+            mtyp->pruneTy(ren.prune.value());
         }
         RENAMESP_NORET(std::make_shared<var_t>(ren.dom-ren.ren[level]-1),index,spine1)
         environment_t env {};
@@ -829,18 +834,23 @@ inferrance_t vipi_t::insert(context_t& cont,term_ptr term) {
 raw_ptr value_t::display() {return quote(0)->display();}
 
 term_ptr value_t::pruneTy(prunings_t& prune) {
+    LOG("Pruning " << *this << " with pruning " << prune.size());
     renaming_t ren = renaming_t(prune);
     return force()->pruneTyRec(0,ren);
 }
 term_ptr value_t::pruneTyRec(std::size_t i, renaming_t& ren) {
+    LOG("Pruning arbitrary value");
     if (ren.prune.value().size() == i) {
         return this->rename(std::optional<size_t>(),ren);
     }
     else {
-        throw "Unification error: Pruning a non-pi type";
+        std::stringstream ss("");
+        ss << "Unification error: Pruning a non-pi type " << *this->force();
+        throw ss.str();
     }
 }
 term_ptr vpi_t::pruneTyRec(std::size_t i, renaming_t& ren) {
+    LOG("Pruning explicit pi");
     if (ren.prune.value().size() == i) {
         return this->rename(std::optional<size_t>(),ren);
     }
@@ -860,6 +870,7 @@ term_ptr vpi_t::pruneTyRec(std::size_t i, renaming_t& ren) {
     }
 }
 term_ptr vipi_t::pruneTyRec(std::size_t i, renaming_t& ren) {
+    LOG("Pruning implicit pi");
     if (ren.prune.value().size() == i) {
         return this->rename(std::optional<size_t>(),ren);
     }

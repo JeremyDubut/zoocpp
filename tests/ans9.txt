@@ -1,0 +1,16 @@
+Parsed term: 
+Let Eq : {A : 𝒰} → (_ : A) → (_ : A) → 𝒰 = λ{A} λx λy (P : (_ : A) → 𝒰) → (_ : (P x)) → (P y) in
+Let refl : {A : 𝒰} → {x : A} → (((Eq {A}) x) x) = λ_ λpx px in
+Let the : (A : 𝒰) → (_ : A) → A = λ_ λx x in
+Let m : (A : 𝒰) → (B : 𝒰) → (_ : 𝒰) → (_ : 𝒰) → 𝒰 = ?_ in
+Let test : ?_ = λa λb ((the ((Eq ((m a) a)) λx λy y)) refl) in
+Let m : (A : 𝒰) → (B : 𝒰) → (_ : A) → (_ : B) → B = ?_ in
+Let test : ?_ = λa λb ((the ((Eq ((m a) a)) λx λy y)) refl) in
+Let m : (_ : 𝒰) → (_ : 𝒰) → (_ : 𝒰) → 𝒰 = ?_ in
+Let test : ?_ = λa λb λc ((the ((Eq (((m a) b) c)) (((m c) b) a))) refl) in
+Let pr1 : ?_ = λf λx (f x) in
+Let pr2 : ?_ = λf λx λy ((f x) y) in
+Let pr3 : ?_ = λf (f 𝒰) in
+𝒰
+=================
+Error: Unification error: escaping RIGID ?0 []
