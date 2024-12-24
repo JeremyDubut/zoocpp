@@ -305,7 +305,7 @@ inferrance_t vipi_t::insertUntilName(context_t& cont,name_t ivar,term_ptr lterm)
         term_ptr m = FRESHMETA(typ); // Type of FM
         value_ptr mv = m->eval(cont.environment);
         TCAPP(mv)
-        return inferrance_t(std::make_shared<iapp_t>(lterm,m),val);
+        return val->force()->insertUntilName(cont,ivar,std::make_shared<iapp_t>(lterm,m));
     }
 }
 
@@ -760,7 +760,39 @@ void value_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine) {
     }
 void vflex_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine1) {
     if (m == index) {
-        UNIFYSP
+        if (spine.size() != spine1.size()) {
+            std::stringstream ss("");
+            ss << "Unification error: inconsistency between intersected spines ";
+            ss << spine.size() << " and " << spine1.size();
+            throw ss.str();
+        }
+        bool pruneCheck = false;
+        auto it1 = spine1.begin();
+        prunings_t prune {};
+        for (auto it : spine) {
+            try {
+                size_t x = it.first->force()->inverse();
+                size_t x1 = it1->first->force()->inverse();
+                if (x==x1) {
+                    if (it1->second) {
+                        prune.push_back(Implicit);
+                    }
+                    else {
+                        prune.push_back(Explicit);
+                    }
+                }
+                else {
+                    prune.push_back(None);
+                    pruneCheck = true;
+                }
+            }
+            catch (std::string e) {
+                UNIFYSP
+            }
+        }
+        if (pruneCheck) {
+            pruneMeta(prune,m);
+        }
     }
     else {
         if (spine.size() < spine1.size()) {
