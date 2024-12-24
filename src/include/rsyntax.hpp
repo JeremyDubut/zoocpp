@@ -91,9 +91,11 @@ struct rvar_t : raw_t {
 // the type of lambdas
 struct rabs_t : raw_t {
     name_t var;
+    std::optional<raw_ptr> typ;
     raw_ptr body;
 
-    rabs_t(name_t var, raw_ptr body) : var {var}, body {body} {}
+    rabs_t(name_t var, raw_ptr body) : var {var}, typ {std::optional<raw_ptr>()}, body {body} {}
+    rabs_t(name_t var, std::optional<raw_ptr> typ, raw_ptr body) : var {var}, typ {typ}, body {body} {}
 
     std::ostream& to_string(std::ostream&);
     term_ptr check(context_t&,value_ptr);
@@ -102,6 +104,7 @@ struct rabs_t : raw_t {
 struct riabs_t : rabs_t {
 
     riabs_t(name_t var, raw_ptr body) : rabs_t(var,body) {}
+    riabs_t(name_t var, std::optional<raw_ptr> typ, raw_ptr body) : rabs_t(var,typ,body) {}
 
     std::ostream& to_string(std::ostream&);
     term_ptr check(context_t&,value_ptr);
@@ -111,6 +114,7 @@ struct rnabs_t : rabs_t {
     name_t ivar;
 
     rnabs_t(name_t var, raw_ptr body, name_t ivar) : rabs_t(var,body), ivar {ivar} {}
+    rnabs_t(name_t var, std::optional<raw_ptr> typ, raw_ptr body, name_t ivar) : rabs_t(var,typ,body), ivar {ivar} {}
 
     std::ostream& to_string(std::ostream&);
     term_ptr check(context_t&,value_ptr);
@@ -236,20 +240,25 @@ struct pibinderlist_t : raw_t {
 // List of lambda declarations
 struct icit : raw_t {
     name_t bind;
-    icit(name_t bind) : bind{bind} {}
+    std::optional<raw_ptr> typ;
+    icit(name_t bind) : bind{bind}, typ{std::optional<raw_ptr>()} {}
+    icit(name_t bind, raw_ptr typ) : bind{bind}, typ{typ} {}
 };
 struct iicit : icit {
     iicit(name_t bind) : icit(bind) {}
+    iicit(name_t bind, raw_ptr typ) : icit(bind,typ) {}
     raw_ptr build(raw_ptr);
 };
 struct eicit : icit {
     eicit(name_t bind) : icit(bind) {}
+    eicit(name_t bind, raw_ptr typ) : icit(bind,typ) {}
     raw_ptr build(raw_ptr);
 };
 struct nicit : icit {
     name_t name;
     nicit(name_t bind,name_t name): icit(bind), name{name} {}
-    raw_ptr build(raw_ptr );
+    nicit(name_t bind,name_t name, raw_ptr typ): icit(bind,typ), name{name} {}
+    raw_ptr build(raw_ptr);
 };
 struct icitlist_t : raw_t {
     std::vector<raw_ptr> icits;

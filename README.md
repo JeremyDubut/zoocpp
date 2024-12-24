@@ -36,13 +36,14 @@ To run tests:
 If the tests are ok, you would get something like the following:
 
     Test project <path_to_build>
-        Start 1: ElaborationTests
-    1/1 Test #1: ElaborationTests .................   Passed    <test_time>
+        Start 1: PositiveTests
+    1/2 Test #1: PositiveTests ....................   Passed    <some_time>
+        Start 2: NegativeTests
+    2/2 Test #2: NegativeTests ....................   Passed    <some_time>
 
-    100% tests passed, 0 tests failed out of 1
+    100% tests passed, 0 tests failed out of 2
 
-    Total Test time (real) =   <total_time>
-
+    Total Test time (real) =   <some_time>
 
 ## What is working:
 - implemented up to step 5

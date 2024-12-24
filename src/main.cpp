@@ -37,8 +37,8 @@ int main(int argc, char* argv[])
         std::shared_ptr<raw_t> term;
         foo::Parser parser(lexer, debug, &term);
         int res = parser();
-
-        std::cout << "Parsed term: " << std::endl << *term << std::endl;
+        std::cout << "Parsed term: " << std::endl;
+        std::cout << *term << std::endl;
         std::cout << "=================" << std::endl;
 
         context_t ctx = context_t();

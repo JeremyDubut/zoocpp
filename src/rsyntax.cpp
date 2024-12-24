@@ -223,9 +223,9 @@ inferrance_t rhole_t::infer(context_t& cont) {
 
 
 raw_ptr raw_t::build(raw_ptr) {throw "Parser error: Cannot build a non-utility raw type";}
-raw_ptr iicit::build(raw_ptr r) {return std::make_shared<riabs_t>(bind,r);}
-raw_ptr eicit::build(raw_ptr r) {return std::make_shared<rabs_t>(bind,r);}
-raw_ptr nicit::build(raw_ptr r) {return std::make_shared<rnabs_t>(bind,r,name);}
+raw_ptr iicit::build(raw_ptr r) {return std::make_shared<riabs_t>(bind,typ,r);}
+raw_ptr eicit::build(raw_ptr r) {return std::make_shared<rabs_t>(bind,typ,r);}
+raw_ptr nicit::build(raw_ptr r) {return std::make_shared<rnabs_t>(bind,typ,r,name);}
 raw_ptr iarg_t::build(raw_ptr r) {return std::make_shared<riapp_t>(r,arg);}
 raw_ptr earg_t::build(raw_ptr r) {return std::make_shared<rapp_t>(r,arg);}
 raw_ptr narg_t::build(raw_ptr r) {return std::make_shared<rnapp_t>(r,arg,name);}
