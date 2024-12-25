@@ -5,16 +5,10 @@
 std::ostream& operator<< (std::ostream& out, raw_t& term) {return term.to_string(out);}
 std::ostream& raw_t::to_string(std::ostream& out) {return out << "Unknown raw term";}
 std::ostream& rvar_t::to_string(std::ostream& out) {return out << name;}
-std::ostream& rabs_t::to_string(std::ostream& out) {
-    if (typ.has_value()) {
-        return out << "λ(" << var << ": " << *typ.value() << ") " << *body;
-    }
-    return out << "λ" << var << " " << *body;}
-std::ostream& riabs_t::to_string(std::ostream& out) {
-    if (typ.has_value()) {
-        return out << "λ{" << var << ": " << *typ.value() << "} " << *body;
-    }
-    return out << "λ{" << var << "} " << *body;}
+std::ostream& rtabs_t::to_string(std::ostream& out) {return out << "λ(" << var << ": " << *typ << ") " << *body;}
+std::ostream& rabs_t::to_string(std::ostream& out) {return out << "λ" << var << " " << *body;}
+std::ostream& riabs_t::to_string(std::ostream& out) {return out << "λ{" << var << "} " << *body;}
+std::ostream& rtiabs_t::to_string(std::ostream& out) {return out << "λ{" << var << ": " << *typ << "} " << *body;}
 std::ostream& rnabs_t::to_string(std::ostream& out) {return out << "λ{" << var << "=" << ivar << "} " << *body;}
 std::ostream& rapp_t::to_string(std::ostream& out) {return out << "(" << *left << " " << *right << ")";}
 std::ostream& riapp_t::to_string(std::ostream& out) {return out << "(" << *left << " {" << *right << "})";}
@@ -231,9 +225,11 @@ inferrance_t rhole_t::infer(context_t& cont) {
 
 
 raw_ptr raw_t::build(raw_ptr) {throw "Parser error: Cannot build a non-utility raw type";}
-raw_ptr iicit::build(raw_ptr r) {return std::make_shared<riabs_t>(bind,typ,r);}
-raw_ptr eicit::build(raw_ptr r) {return std::make_shared<rabs_t>(bind,typ,r);}
-raw_ptr nicit::build(raw_ptr r) {return std::make_shared<rnabs_t>(bind,typ,r,name);}
+raw_ptr iicit::build(raw_ptr r) {return std::make_shared<riabs_t>(bind,r);}
+raw_ptr eicit::build(raw_ptr r) {return std::make_shared<rabs_t>(bind,r);}
+raw_ptr tiicit::build(raw_ptr r) {return std::make_shared<rtiabs_t>(bind,typ,r);}
+raw_ptr teicit::build(raw_ptr r) {return std::make_shared<rtabs_t>(bind,typ,r);}
+raw_ptr nicit::build(raw_ptr r) {return std::make_shared<rnabs_t>(bind,r,name);}
 raw_ptr iarg_t::build(raw_ptr r) {return std::make_shared<riapp_t>(r,arg);}
 raw_ptr earg_t::build(raw_ptr r) {return std::make_shared<rapp_t>(r,arg);}
 raw_ptr narg_t::build(raw_ptr r) {return std::make_shared<rnapp_t>(r,arg,name);}
