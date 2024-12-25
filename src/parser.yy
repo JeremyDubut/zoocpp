@@ -180,7 +180,7 @@ pLamBinderRec: pLamBinder {
         $$->push_back($2); 
     }
 pLamBinder: pBind { $$ = std::make_shared<eicit>($1->get_name()); }
-    | LPAR pBind COLON pTm RPAR { $$ = std::make_shared<eicit>($1->get_name(),$4); }
+    | LPAR pBind COLON pTm RPAR { $$ = std::make_shared<eicit>($2->get_name(),$4); }
     | LBRA pBind RBRA { $$ = std::make_shared<iicit>($2->get_name()); }
     | LBRA pBind COLON pTm RBRA { $$ = std::make_shared<iicit>($2->get_name(),$4); }
     | LBRA VAR EQ pBind RBRA { $$ = std::make_shared<nicit>($4->get_name(),$VAR->get_name()); }

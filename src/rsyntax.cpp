@@ -5,8 +5,16 @@
 std::ostream& operator<< (std::ostream& out, raw_t& term) {return term.to_string(out);}
 std::ostream& raw_t::to_string(std::ostream& out) {return out << "Unknown raw term";}
 std::ostream& rvar_t::to_string(std::ostream& out) {return out << name;}
-std::ostream& rabs_t::to_string(std::ostream& out) {return out << "λ" << var << " " << *body;}
-std::ostream& riabs_t::to_string(std::ostream& out) {return out << "λ{" << var << "} " << *body;}
+std::ostream& rabs_t::to_string(std::ostream& out) {
+    if (typ.has_value()) {
+        return out << "λ(" << var << ": " << *typ.value() << ") " << *body;
+    }
+    return out << "λ" << var << " " << *body;}
+std::ostream& riabs_t::to_string(std::ostream& out) {
+    if (typ.has_value()) {
+        return out << "λ{" << var << ": " << *typ.value() << "} " << *body;
+    }
+    return out << "λ{" << var << "} " << *body;}
 std::ostream& rnabs_t::to_string(std::ostream& out) {return out << "λ{" << var << "=" << ivar << "} " << *body;}
 std::ostream& rapp_t::to_string(std::ostream& out) {return out << "(" << *left << " " << *right << ")";}
 std::ostream& riapp_t::to_string(std::ostream& out) {return out << "(" << *left << " {" << *right << "})";}
