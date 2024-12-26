@@ -29,7 +29,7 @@ void context_t::new_var(name_t var, value_ptr t) {
     environment.push_back(std::make_shared<vrig_t>(level));
     local = std::make_unique<lbind_t>(local,var,t->quote(level));
     prune.push_back(Explicit);
-    type_t typ{t,level}; //TODO
+    type_t typ{t,level}; 
     types[var].push_back(typ); 
     level++;
 }
@@ -88,6 +88,18 @@ term_ptr rabs_t::check(context_t& cont,value_ptr v) {
     LOG("Checking Explicit Lam " << *this << " with type " << *v);
     term_ptr res = v->force()->check_RABS(cont,var,body);
     LOG("Type check of Explicit Lam " << *this << " with type " << *v << " successful");
+    return res;
+}
+term_ptr rtabs_t::check(context_t& cont,value_ptr v) {
+    LOG("Checking Typed Explicit Lam " << *this << " with type " << *v);
+    term_ptr res = v->force()->check_RTABS(cont,var,typ,body);
+    LOG("Type check of Typed Explicit Lam " << *this << " with type " << *v << " successful");
+    return res;
+}
+term_ptr rtiabs_t::check(context_t& cont,value_ptr v) {
+    LOG("Checking Typed Implicit Lam " << *this << " with type " << *v);
+    term_ptr res = v->force()->check_RTIABS(cont,var,typ,body);
+    LOG("Type check of Typed Implicit Lam " << *this << " with type " << *v << " successful");
     return res;
 }
 term_ptr riabs_t::check(context_t& cont,value_ptr v) {

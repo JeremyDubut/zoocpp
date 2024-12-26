@@ -167,6 +167,31 @@ term_ptr vipi_t::check_RABS(context_t& cont,name_t var, raw_ptr r) {
     cont.pop();
     return res;
 }
+term_ptr value_t::check_RTABS(context_t& cont,name_t var, raw_ptr typ, raw_ptr body) {
+    value_ptr a = typ->check(cont,VU)->eval(cont.environment); 
+    cont.new_var(var,a);
+    inferrance_t inf = body->infer(cont);
+    cont.pop(var);
+    closure_t clos = closure_t(cont.environment,inf.typ->quote(cont.level+1));
+    unify(cont.level,std::make_shared<vpi_t>(var,a,clos));
+    return std::make_shared<abs_t>(var,inf.term);
+}
+term_ptr vpi_t::check_RTABS(context_t& cont,name_t var, raw_ptr typl, raw_ptr r) {
+    term_ptr ttypl = typl->check(cont,VU);
+    ttypl->eval(cont.environment)->force()->unify(cont.level,typ);
+    cont.new_var(var,typ);
+    TCAPP(std::make_shared<vrig_t>(cont.level-1));
+    term_ptr res = std::make_shared<abs_t>(var, r->check(cont,val));
+    cont.pop(var);
+    return res;
+}
+term_ptr vipi_t::check_RTABS(context_t& cont,name_t var, raw_ptr typ, raw_ptr r) {
+    cont.new_bind(this->var,this->typ);
+    TCAPP(std::make_shared<vrig_t>(cont.level-1));
+    term_ptr res = std::make_shared<iabs_t>(this->var, val->force()->check_RTABS(cont,var,typ,r));
+    cont.pop();
+    return res;
+}
 term_ptr value_t::check_RIABS(context_t& cont,name_t var, raw_ptr body) {
     value_ptr a = FRESHMETA(VU)->eval(cont.environment); // Type of FM
     cont.new_var(var,a);
@@ -177,6 +202,24 @@ term_ptr value_t::check_RIABS(context_t& cont,name_t var, raw_ptr body) {
     return std::make_shared<iabs_t>(var,inf.term);
 }
 term_ptr vipi_t::check_RIABS(context_t& cont,name_t var, raw_ptr r) {
+    cont.new_var(var,typ);
+    TCAPP(std::make_shared<vrig_t>(cont.level-1));
+    term_ptr res = std::make_shared<iabs_t>(var, r->check(cont,val));
+    cont.pop(var);
+    return res;
+}
+term_ptr value_t::check_RTIABS(context_t& cont,name_t var, raw_ptr typ, raw_ptr body) {
+    value_ptr a = typ->check(cont,VU)->eval(cont.environment); 
+    cont.new_var(var,a);
+    inferrance_t inf = body->infer(cont);
+    cont.pop(var);
+    closure_t clos = closure_t(cont.environment,inf.typ->quote(cont.level+1));
+    unify(cont.level,std::make_shared<vipi_t>(var,a,clos));
+    return std::make_shared<iabs_t>(var,inf.term);
+}
+term_ptr vipi_t::check_RTIABS(context_t& cont,name_t var, raw_ptr typl, raw_ptr r) {
+    term_ptr ttypl = typl->check(cont,VU);
+    ttypl->eval(cont.environment)->force()->unify(cont.level,typ);
     cont.new_var(var,typ);
     TCAPP(std::make_shared<vrig_t>(cont.level-1));
     term_ptr res = std::make_shared<iabs_t>(var, r->check(cont,val));

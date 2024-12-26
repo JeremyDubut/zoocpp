@@ -27,7 +27,9 @@ struct value_t : std::enable_shared_from_this<value_t> {
     virtual term_ptr quote(std::size_t);
     // Cases for type checking
     virtual term_ptr check_RABS(context_t&,name_t, raw_ptr);
+    virtual term_ptr check_RTABS(context_t&,name_t,raw_ptr,raw_ptr);
     virtual term_ptr check_RIABS(context_t&,name_t, raw_ptr);
+    virtual term_ptr check_RTIABS(context_t&,name_t,raw_ptr,raw_ptr);
     virtual term_ptr check_RNABS(context_t&,name_t,name_t, raw_ptr);
     virtual term_ptr check_RAW(context_t&,raw_ptr);
     virtual term_ptr check_LET(context_t&,name_t,raw_ptr,raw_ptr,raw_ptr);
@@ -149,6 +151,7 @@ struct vpi_t : value_t {
     std::ostream& to_string(std::ostream&);
     term_ptr quote(std::size_t);
     term_ptr check_RABS(context_t&,name_t, raw_ptr);
+    term_ptr check_RTABS(context_t&,name_t,raw_ptr,raw_ptr);
     std::pair<value_ptr,closure_t> infer_RAPP(context_t&);
     std::pair<value_ptr,closure_t> infer_RINAPP(context_t&);
     value_ptr clone();
@@ -177,6 +180,8 @@ struct vipi_t : vpi_t {
     term_ptr wrapAbsRec(std::size_t,std::size_t,term_ptr);
     term_ptr check_RIABS(context_t&,name_t, raw_ptr);
     term_ptr check_RABS(context_t&,name_t, raw_ptr);
+    term_ptr check_RTABS(context_t&,name_t,raw_ptr,raw_ptr);
+    term_ptr check_RTIABS(context_t&,name_t,raw_ptr,raw_ptr);
     term_ptr check_RNABS(context_t&,name_t,name_t, raw_ptr);
     term_ptr check_LET(context_t&,name_t,raw_ptr,raw_ptr,raw_ptr);
     term_ptr check_HOLE(context_t&);

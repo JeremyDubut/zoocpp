@@ -108,6 +108,7 @@ struct rabs_t : raw_t {
 struct rtabs_t : rabs_t, typed {
     rtabs_t(name_t var, raw_ptr typ, raw_ptr body) : rabs_t(var,body), typed(typ) {}
     std::ostream& to_string(std::ostream&);
+    term_ptr check(context_t&,value_ptr);
 };
 struct riabs_t : rabs_t {
 
@@ -119,6 +120,7 @@ struct riabs_t : rabs_t {
 struct rtiabs_t : riabs_t, typed {
     rtiabs_t(name_t var, raw_ptr typ, raw_ptr body) : riabs_t(var,body), typed(typ) {}
     std::ostream& to_string(std::ostream&);
+    term_ptr check(context_t&,value_ptr);
 };
 struct rnabs_t : rabs_t {
 
