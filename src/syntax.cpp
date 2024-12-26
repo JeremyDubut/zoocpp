@@ -16,8 +16,8 @@ std::ostream& u_t::to_string(std::ostream& out) {return out << "𝒰";}
 std::ostream& pi_t::to_string(std::ostream& out) {return out << "(" << var << " : " << *typ << ") → " << *body;}
 std::ostream& ipi_t::to_string(std::ostream& out) {return out << "{" << var << " : " << *typ << "} → " << *body;}
 std::ostream& meta_t::to_string(std::ostream& out) {return out << "?" << index;}
-std::ostream& imeta_t::to_string(std::ostream& out) {return out << "?" << index;}
 std::ostream& appp_t::to_string(std::ostream& out) {return out << "(" << *left << " [prunes])";}
+std::ostream& tcheck_t::to_string(std::ostream& out) {return out << "!" << index;}
 std::ostream& operator<< (std::ostream& out, term_t& term) {return term.to_string(out);}
 
 value_ptr term_t::eval() {
@@ -58,28 +58,10 @@ value_ptr ipi_t::eval(environment_t& env) {
 value_ptr meta_t::eval(environment_t&) {
     return VMETA(index);
 }
-value_ptr imeta_t::eval(environment_t& env) {
-    if (env.size() != flags.size()) {
-        std::stringstream ss("");
-        ss << "Evaluation error: Inconsistency between environments " << env.size() << " and flags " << flags.size();
-        throw ss.str();
-    }
-    else {
-        auto ite = env.begin();
-        value_ptr res = VMETA(index);
-        for (bool itf : flags) {
-            if (itf) {
-                res = res->vApp((*ite)->clone(),false);
-            }
-            ite++;
-        }
-        return res;
-    }
-}
 value_ptr appp_t::eval(environment_t& env) {
     if (env.size() != prune.size()) {
         std::stringstream ss("");
-        ss << "Inconsistency between environments " << env.size() << " and prunings " << prune.size();
+        ss << "Evaluation error: Inconsistency between environments " << env.size() << " and prunings " << prune.size();
         throw ss.str();
     }
     else {
@@ -95,6 +77,9 @@ value_ptr appp_t::eval(environment_t& env) {
         }
         return res;
     }
+}
+value_ptr tcheck_t::eval(environment_t& env) {
+    return check_t::lookup(index)->read()->eval(env); // TODO: avoid copying of pruning
 }
 
 term_ptr term_t::nf(environment_t& env) {
@@ -170,6 +155,15 @@ term_ptr lbind_t::closety(term_ptr body) {
 }
 term_ptr ldefine_t::closety(term_ptr body) {
     return mcl->closety(std::make_shared<let_t>(var,typ,def,body));
+}
+term_ptr locals_t::closetm(term_ptr body) {
+    return body;
+}
+term_ptr lbind_t::closetm(term_ptr body) {
+    return mcl->closetm(std::make_shared<abs_t>(var,body));
+}
+term_ptr ldefine_t::closetm(term_ptr body) {
+    return mcl->closetm(std::make_shared<let_t>(var,typ,def,body));
 }
 
 std::unique_ptr<locals_ptr> locals_t::pop() {

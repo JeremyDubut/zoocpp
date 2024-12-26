@@ -34,6 +34,7 @@ struct icit;
 struct arg_t;
 struct metaentry_t;
 struct locals_t;
+struct checkentry_t;
 
 
 // We decided to use share pointers because terms are shared during 
@@ -41,8 +42,9 @@ struct locals_t;
 typedef std::shared_ptr<value_t> value_ptr;
 typedef std::shared_ptr<term_t> term_ptr;
 typedef std::shared_ptr<raw_t> raw_ptr;
-typedef std::unique_ptr<locals_t> locals_ptr;
+typedef std::shared_ptr<locals_t> locals_ptr;
 typedef std::shared_ptr<metaentry_t> meta_ptr;
+typedef std::shared_ptr<checkentry_t> check_ptr;
 
 // We keep track of types as a map from variable names to a vector
 // keeping the type of the occurences of this variable
@@ -55,6 +57,7 @@ typedef std::vector<value_ptr> environment_t;
 typedef std::string name_t;
 typedef std::vector<name_t> names_t;
 typedef std::vector<meta_ptr> metadata_t;
+typedef std::vector<check_ptr> checkdata_t;
 typedef std::vector<bool> flags_t;
 typedef std::vector<std::pair<value_ptr,bool>> spine_t;
 typedef std::unordered_map<std::size_t,std::size_t> renamingFun_t;
@@ -62,6 +65,7 @@ enum pruning_t { Implicit, Explicit, None };
 typedef std::vector<pruning_t> prunings_t;
 enum status_t { OK, OK_NonRenaming, NeedsPruning};
 typedef std::vector<std::pair<std::optional<term_ptr>,bool>> tspine_t;
+typedef std::unordered_set<std::size_t> block_t;
 
 
 // Locals
@@ -69,6 +73,7 @@ struct locals_t {
 
     virtual ~locals_t() {}
     virtual term_ptr closety(term_ptr);
+    virtual term_ptr closetm(term_ptr);
     virtual std::unique_ptr<locals_ptr> pop();
 
 };
@@ -78,8 +83,9 @@ struct lbind_t : locals_t {
     name_t var;
     term_ptr typ;
 
-    lbind_t(locals_ptr& mcl, name_t& var, term_ptr typ) : var{var}, typ{typ} {this->mcl = std::move(mcl);}
+    lbind_t(locals_ptr mcl, name_t& var, term_ptr typ) : mcl{mcl}, var{var}, typ{typ} {}
     term_ptr closety(term_ptr);
+    term_ptr closetm(term_ptr);
     std::unique_ptr<locals_ptr> pop();
 
 };
@@ -90,8 +96,9 @@ struct ldefine_t : locals_t {
     term_ptr typ;
     term_ptr def;
 
-    ldefine_t(locals_ptr& mcl, name_t& var, term_ptr typ, term_ptr def) : var{var}, typ{typ}, def{def} {this->mcl = std::move(mcl);}
+    ldefine_t(locals_ptr mcl, name_t& var, term_ptr typ, term_ptr def) : mcl{mcl}, var{var}, typ{typ}, def{def} {}
     term_ptr closety(term_ptr);
+    term_ptr closetm(term_ptr);
     std::unique_ptr<locals_ptr> pop();
 
 };

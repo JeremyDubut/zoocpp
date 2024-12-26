@@ -63,6 +63,8 @@ struct value_t : std::enable_shared_from_this<value_t> {
     virtual value_ptr clone();
     // Forcing the evaluation of a flexible metavariable
     virtual value_ptr force();
+    // Retrying a check
+    virtual void retry(std::size_t,context_t&,raw_ptr,value_ptr,std::size_t);
     // Helpers for unification
     virtual std::size_t inverse();
     virtual term_ptr rename(std::optional<std::size_t>,renaming_t&);
@@ -195,6 +197,7 @@ struct vflex_t : value_t {
     value_ptr vApp(value_ptr,bool);
     value_ptr clone();
     value_ptr force();
+    void retry(std::size_t,context_t&,raw_ptr,value_ptr,std::size_t);
     term_ptr rename(std::optional<std::size_t>,renaming_t&);
     void unify(std::size_t,value_ptr);
     void unify_FLEX(std::size_t,std::size_t,spine_t&);

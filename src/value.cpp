@@ -403,12 +403,12 @@ term_ptr vipi_t::wrapAbsRec(std::size_t l, std::size_t lp, term_ptr term) {
 
 std::size_t pruneMeta(prunings_t& prune, std::size_t level) {
     LOG("Pruning metavariable " << level);
-    value_ptr mtyp = metavar_t::lookup(level)->read_unsolved();
+    std::pair<block_t,value_ptr> mtyp = metavar_t::lookup(level)->read_unsolved();
     environment_t env {};
-    value_ptr ptyp = mtyp->pruneTy(prune)->eval(env);
-    std::size_t newl = metavar_t(ptyp).id;
+    value_ptr ptyp = mtyp.second->pruneTy(prune)->eval(env);
+    std::size_t newl = metavar_t(ptyp,mtyp.first).id;
     term_ptr presol = std::make_shared<appp_t>(std::make_shared<meta_t>(newl),prune);
-    value_ptr sol = mtyp->wrapAbs(prune.size(),presol)->eval(env);
+    value_ptr sol = mtyp.second->wrapAbs(prune.size(),presol)->eval(env);
     meta_ptr me = metavar_t::lookup(level)->update(sol); \
     metavar_t::lookupTable[level] = me;
     return newl;
@@ -555,15 +555,18 @@ term_ptr vrig_t::rename(std::optional<std::size_t> m,renaming_t& ren) {
 
 void value_t::solveWithRen(std::size_t m, renaming_t& ren) {
     meta_ptr meta = metavar_t::lookup(m);
-    value_ptr mtyp = meta->read_unsolved();
+    std::pair<block_t,value_ptr> mtyp = meta->read_unsolved();
     if (ren.prune.has_value()) {
         pruneTy(ren.prune.value());
     }
     term_ptr term = force()->rename(m,ren);
     LOG("Renaming done");
     environment_t env {};
-    value_ptr solution = mtyp->wrapAbs(ren.dom,term)->eval(env);
+    value_ptr solution = mtyp.second->wrapAbs(ren.dom,term)->eval(env);
     metavar_t::lookupTable[m] = meta->update(solution);
+    for (std::size_t it : mtyp.first) {
+        check_t::lookup(it)->retry(it);
+    }
 }
 void value_t::solve(std::size_t gamma, std::size_t index, spine_t& spine) {
     LOG("Solving " << *std::make_shared<vflex_t>(index,spine) << " with value " << *this);
@@ -658,7 +661,7 @@ void vflex_t::unify_PI(std::size_t level, name_t var, value_ptr typ,closure_t& b
     LOG("Solving " << *this << " with explicit pi " << *typ << " and " << body);
     renaming_t ren = renaming_t(level,spine);
     meta_ptr meta = metavar_t::lookup(index);
-    value_ptr mtyp = meta->read_unsolved();
+    std::pair<block_t,value_ptr> mtyp = meta->read_unsolved();
     if (ren.prune.has_value()) {
         pruneTy(ren.prune.value());
     }
@@ -669,8 +672,11 @@ void vflex_t::unify_PI(std::size_t level, name_t var, value_ptr typ,closure_t& b
     ren.pop();
     term_ptr term = std::make_shared<pi_t>(var,typ->force()->rename(index,ren),res);
     environment_t env {};
-    value_ptr solution = mtyp->wrapAbs(ren.dom,term)->eval(env);
+    value_ptr solution = mtyp.second->wrapAbs(ren.dom,term)->eval(env);
     metavar_t::lookupTable[index] = meta->update(solution);
+    for (std::size_t it : mtyp.first) {
+        check_t::lookup(it)->retry(it);
+    }
 }
 void value_t::unify_IPI(std::size_t,name_t,value_ptr,closure_t&) {
     std::stringstream ss("");
@@ -687,7 +693,7 @@ void vflex_t::unify_IPI(std::size_t level, name_t var, value_ptr typ,closure_t& 
     LOG("Solving " << *this << " with implicit pi " << *typ << " and " << body);
     renaming_t ren = renaming_t(level,spine);
     meta_ptr meta = metavar_t::lookup(index);
-    value_ptr mtyp = meta->read_unsolved();
+    std::pair<block_t,value_ptr> mtyp = meta->read_unsolved();
     if (ren.prune.has_value()) {
         pruneTy(ren.prune.value());
     }
@@ -698,8 +704,11 @@ void vflex_t::unify_IPI(std::size_t level, name_t var, value_ptr typ,closure_t& 
     ren.pop();
     term_ptr term = std::make_shared<ipi_t>(var,typ->force()->rename(index,ren),res);
     environment_t env {};
-    value_ptr solution = mtyp->wrapAbs(ren.dom,term)->eval(env);
+    value_ptr solution = mtyp.second->wrapAbs(ren.dom,term)->eval(env);
     metavar_t::lookupTable[index] = meta->update(solution);
+    for (std::size_t it : mtyp.first) {
+        check_t::lookup(it)->retry(it);
+    }
 }
 void value_t::unify_RIG(std::size_t, std::size_t, spine_t&) {
     std::stringstream ss("");
@@ -732,14 +741,17 @@ void vflex_t::unify_RIG(std::size_t l, std::size_t level, spine_t& spine1) {
         LOG("Solving " << *this << " with RIG " << level);
         renaming_t ren = renaming_t(level,spine);
         meta_ptr meta = metavar_t::lookup(index);
-        value_ptr mtyp = meta->read_unsolved();
+        std::pair<block_t,value_ptr> mtyp = meta->read_unsolved();
         if (ren.prune.has_value()) {
-            mtyp->pruneTy(ren.prune.value());
+            mtyp.second->pruneTy(ren.prune.value());
         }
         RENAMESP_NORET(std::make_shared<var_t>(ren.dom-ren.ren[level]-1),index,spine1)
         environment_t env {};
-        value_ptr solution = mtyp->wrapAbs(ren.dom,trhs)->eval(env);
+        value_ptr solution = mtyp.second->wrapAbs(ren.dom,trhs)->eval(env);
         metavar_t::lookupTable[index] = meta->update(solution);
+        for (std::size_t it : mtyp.first) {
+            check_t::lookup(it)->retry(it);
+        }
     }
     else {
         std::stringstream ss("");
@@ -888,4 +900,13 @@ term_ptr vipi_t::pruneTyRec(std::size_t i, renaming_t& ren) {
             }
         }
     }
+}
+
+void value_t::retry(std::size_t c,context_t& cont,raw_ptr rterm,value_ptr,std::size_t m) {
+    term_ptr term = rterm->check(cont,shared_from_this());
+    metavar_t::lookup(m)->unify(m,cont,term);
+    check_t::lookupTable[c] = std::make_shared<checked_t>(term);
+}
+void vflex_t::retry(std::size_t c,context_t&,raw_ptr,value_ptr,std::size_t) {
+    metavar_t::lookup(index)->add_block(c);
 }

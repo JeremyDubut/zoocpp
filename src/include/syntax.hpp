@@ -142,17 +142,15 @@ struct meta_t : term_t {
 
 };
 
-// Metavariables, inserted during elaboration
-// Constructors gloablly create them
-// The term itself only contains the index and flags
-// Flags are just to know if variables are bound (true) or defined by let (false)
-struct imeta_t : term_t {
+// Checks
+// Same as metavariables
+struct tcheck_t : term_t {
 
     std::size_t index;
-    flags_t flags;
 
-    imeta_t(value_ptr typ, flags_t& flags) : index {metavar_t(typ).id}, flags {flags} {}
-    imeta_t(value_ptr typ) : index {metavar_t(typ).id}, flags {flags_t()} {}
+    tcheck_t(context_t& cont, raw_ptr rterm, value_ptr typ, std::size_t m): 
+        index {check_t(cont,rterm,typ,m).id} {}
+    tcheck_t(size_t index) : index {index} {}
     
     std::ostream& to_string(std::ostream&);
     value_ptr eval(environment_t&);
