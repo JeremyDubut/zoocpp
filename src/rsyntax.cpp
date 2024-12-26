@@ -234,6 +234,15 @@ inferrance_t rhole_t::infer(context_t& cont) {
     LOG("Inferrance of hole successfule, inferred with type " << *a);
     return inferrance_t(FRESHMETA(a),a);
 }
+inferrance_t raw_t::infer() {
+    context_t cont {};
+    inferrance_t res = infer(cont);
+    std::size_t count = 0;
+    for (check_ptr cit : check_t::lookupTable) {
+        cit->final(count);
+    }
+    return res;
+}
 
 
 raw_ptr raw_t::build(raw_ptr) {throw "Parser error: Cannot build a non-utility raw type";}

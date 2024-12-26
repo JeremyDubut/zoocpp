@@ -82,9 +82,9 @@ value_ptr tcheck_t::eval(environment_t& env) {
     return check_t::lookup(index)->read()->eval(env); // TODO: avoid copying of pruning
 }
 
-term_ptr term_t::nf(environment_t& env) {
-    std::size_t length = env.size();
-    return eval(env)->quote(length);
+term_ptr term_t::nf() {
+    environment_t env {};
+    return eval(env)->quote(0);
 }
 
 raw_ptr term_t::display() {

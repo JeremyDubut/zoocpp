@@ -34,24 +34,22 @@ int main(int argc, char* argv[])
         }
         foo::Lexer lexer(*in, debug);
 
-        std::shared_ptr<raw_t> term;
+        raw_ptr term;
         foo::Parser parser(lexer, debug, &term);
         int res = parser();
         std::cout << "Parsed term: " << std::endl;
         std::cout << *term << std::endl;
         std::cout << "=================" << std::endl;
 
-        context_t ctx = context_t();
-        environment_t env = environment_t();
         #ifdef DEBUG
             LOG("Debug log:");
         #endif
-        inferrance_t inf = term->infer(ctx);
+        inferrance_t inf = term->infer();
         #ifdef DEBUG
             LOG("=================");
         #endif
         std::cout << "Inferred type: " << *inf.typ->display() << std::endl;
-        std::cout << "Normal form: " << *inf.term->nf(env)->display() << std::endl;
+        std::cout << "Normal form: " << *inf.term->nf()->display() << std::endl;
 
         return res;
     }

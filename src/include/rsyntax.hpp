@@ -70,6 +70,7 @@ struct raw_t : std::enable_shared_from_this<raw_t> {
     // Type check and inferrance
     virtual term_ptr check(context_t&,value_ptr);
     virtual inferrance_t infer(context_t&);
+    inferrance_t infer();
 };
 std::ostream& operator<< (std::ostream&, raw_t&);
 

@@ -190,3 +190,14 @@ void checked_t::retry(std::size_t) {}
 void unchecked_t::retry(std::size_t c) {
     typ->force()->retry(c,cont,rterm,typ,meta);
 }
+void checkentry_t::final(std::size_t) {
+    throw "Final checking an unknown check";
+}
+void checked_t::final(std::size_t) {}
+void unchecked_t::final(std::size_t c) {
+    inferrance_t inf = rterm->infer(cont);
+    inf = inf.term->insert(cont,inf.typ);
+    check_t::lookupTable[c] = std::make_shared<checked_t>(inf.term);
+    typ->force()->unify(cont.level,inf.typ);
+    metavar_t::lookup(meta)->unify(meta,cont,inf.term);
+}

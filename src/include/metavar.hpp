@@ -74,6 +74,7 @@ struct checkentry_t {
     virtual ~checkentry_t() {}
     virtual term_ptr read();
     virtual void retry(std::size_t);
+    virtual void final(std::size_t);
 
 };
 struct checked_t : checkentry_t {
@@ -82,6 +83,7 @@ struct checked_t : checkentry_t {
     checked_t(term_ptr res) : res{res} {}
     term_ptr read();
     void retry(std::size_t);
+    void final(std::size_t);
 
 };
 struct unchecked_t : checkentry_t {
@@ -98,6 +100,7 @@ struct unchecked_t : checkentry_t {
         {}
     term_ptr read();
     void retry(std::size_t);
+    void final(std::size_t);
 };
 
 struct check_t {

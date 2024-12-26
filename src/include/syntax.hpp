@@ -16,7 +16,7 @@ struct term_t : std::enable_shared_from_this<term_t> {
     value_ptr eval();
     virtual value_ptr eval(environment_t&);
     // Weak head normal form
-    term_ptr nf(environment_t&);
+    term_ptr nf();
     // A better display to remove the debruijn indices
     raw_ptr display();
     virtual raw_ptr display_rec(names_t&);
