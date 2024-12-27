@@ -29,7 +29,7 @@
     using Token = Parser::token;
 %}
 
---[^"\n"]* ;
+--[^\n]* ;
 "{-"            { BEGIN(comment); }
 <comment>"-}" { BEGIN(INITIAL); }
 <comment>\n   { ++currentLine; }

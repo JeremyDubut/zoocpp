@@ -55,13 +55,13 @@ void context_t::pop(name_t var) {
         types.erase(var);
     }
     prune.pop_back();
-    local = std::move(*local->pop());
+    local = local->pop();
 }
 void context_t::pop() {
     environment.pop_back();
     level = level-1;
     prune.pop_back();
-    local = std::move(*local->pop());
+    local = local->pop();
 }
 
 // Types take too long to print
@@ -82,6 +82,12 @@ term_ptr raw_t::check(context_t& cont,value_ptr typ) {
     LOG("Checking term " << *this << " with type " << *typ);
     term_ptr res = typ->force()->check_RAW(cont,shared_from_this());
     LOG("Type checking of term " << *this << " with type " << *typ << " successful");
+    return res;
+}
+term_ptr rvar_t::check(context_t& cont,value_ptr typ) {
+    LOG("Checking variable " << *this << " with type " << *typ);
+    term_ptr res = typ->force()->check_VAR(cont,name);
+    LOG("Type checking of variable " << *this << " with type " << *typ << " successful");
     return res;
 }
 term_ptr rabs_t::check(context_t& cont,value_ptr v) {
@@ -139,6 +145,42 @@ inferrance_t rabs_t::infer(context_t& cont){
     cont.pop(var);
     closure_t clos = closure_t(cont.environment,inf.typ->quote(cont.level+1));
     inferrance_t res = inferrance_t(std::make_shared<abs_t>(var,inf.term),std::make_shared<vpi_t>(var,a,clos));
+    LOG("Inferrance of Explicit Lam" << *this << "successful, inferred with type " << *res.typ);
+    return res;
+}
+inferrance_t rtabs_t::infer(context_t& cont){
+    LOG("Inferring Explicit Lam" << *this);
+    value_ptr a = typ->check(cont,VU)->eval(cont.environment); 
+    cont.new_var(var,a);
+    inferrance_t inf = body->infer(cont);
+    inf = inf.term->insert(cont,inf.typ);
+    cont.pop(var);
+    closure_t clos = closure_t(cont.environment,inf.typ->quote(cont.level+1));
+    inferrance_t res = inferrance_t(std::make_shared<abs_t>(var,inf.term),std::make_shared<vpi_t>(var,a,clos));
+    LOG("Inferrance of Explicit Lam" << *this << "successful, inferred with type " << *res.typ);
+    return res;
+}
+inferrance_t riabs_t::infer(context_t& cont){
+    LOG("Inferring Explicit Lam" << *this);
+    value_ptr a = FRESHMETA(VU)->eval(cont.environment); // Type of FM
+    cont.new_var(var,a);
+    inferrance_t inf = body->infer(cont);
+    inf = inf.term->insert(cont,inf.typ);
+    cont.pop(var);
+    closure_t clos = closure_t(cont.environment,inf.typ->quote(cont.level+1));
+    inferrance_t res = inferrance_t(std::make_shared<iabs_t>(var,inf.term),std::make_shared<vipi_t>(var,a,clos));
+    LOG("Inferrance of Explicit Lam" << *this << "successful, inferred with type " << *res.typ);
+    return res;
+}
+inferrance_t rtiabs_t::infer(context_t& cont){
+    LOG("Inferring Explicit Lam" << *this);
+    value_ptr a = typ->check(cont,VU)->eval(cont.environment); 
+    cont.new_var(var,a);
+    inferrance_t inf = body->infer(cont);
+    inf = inf.term->insert(cont,inf.typ);
+    cont.pop(var);
+    closure_t clos = closure_t(cont.environment,inf.typ->quote(cont.level+1));
+    inferrance_t res = inferrance_t(std::make_shared<iabs_t>(var,inf.term),std::make_shared<vipi_t>(var,a,clos));
     LOG("Inferrance of Explicit Lam" << *this << "successful, inferred with type " << *res.typ);
     return res;
 }
@@ -238,8 +280,12 @@ inferrance_t raw_t::infer() {
     context_t cont {};
     inferrance_t res = infer(cont);
     std::size_t count = 0;
-    for (check_ptr cit : check_t::lookupTable) {
+    LOG("..........................");
+    while (count < check_t::lookupTable.size()) {
+        check_ptr cit = check_t::lookup(count);
+        LOG("This check is " << cit << " and " << count+1 << "/" << check_t::lookupTable.size());
         cit->final(count);
+        count++;
     }
     return res;
 }

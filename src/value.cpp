@@ -41,7 +41,7 @@
     return std::make_shared<t>(var,res);
 #define RENAMEPI(t) \
     std::size_t l = ren.cod; \
-    VTCAPP; \
+    VTCAPP \
     ren.lift(); \
     term_ptr res = val->force()->rename(m,ren); \
     ren.pop(); \
@@ -144,6 +144,63 @@ term_ptr vrig_t::quote(std::size_t l) {
     QUOTESP(std::make_shared<var_t>(l-level-1))
 }
 
+term_ptr value_t::check_VAR(context_t& cont, name_t var) {
+    if (cont.types.contains(var)) {
+        auto res = cont.types.at(var).end()-1;
+        term_ptr term = std::make_shared<var_t>(cont.level-1-res->level);
+        inferrance_t inf = res->typ->clone()->force()->insert(cont,term);
+        unify(cont.level,inf.typ);
+        return inf.term;
+    }
+    else {
+        throw "Check error: Unbounded variable "+var;
+    }
+}
+term_ptr vipi_t::check_VAR(context_t& cont,name_t name) {
+    LOG("Checking VAR with VIPI");
+    if (cont.types.contains(name)) {
+        auto res = cont.types.at(name).end()-1;
+        return res->typ->clone()->force()->check_VAR_VIPI(cont,name,var,typ,body,res->level);
+    }
+    else {
+        throw "Check error: Unbounded variable "+var;
+    }
+}
+term_ptr vflex_t::check_VAR(context_t& cont,name_t var) {
+    FUNSP(std::make_shared<meta_t>(index),quote(cont.level),spine)
+    std::size_t placeholder = metavar_t(cont.local->closety(trhs)->eval()).id;
+    std::size_t c = check_t(cont,std::make_shared<rvar_t>(var),shared_from_this(),placeholder).id;
+    metavar_t::lookup(index)->add_block(c);
+    return std::make_shared<tcheck_t>(c);
+}
+term_ptr value_t::check_VAR_VIPI(context_t& cont,name_t name,name_t var,value_ptr typ,closure_t& body, std::size_t){
+    std::size_t l = cont.level;
+    VCAPP(body,val);
+    cont.new_bind(var,typ);
+    term_ptr res = val->force()->check_VAR(cont,name);
+    cont.pop();
+    return std::make_shared<iabs_t>(var,res);
+};
+term_ptr vflex_t::check_VAR_VIPI(context_t& cont,name_t,name_t var,value_ptr typ,closure_t& body,std::size_t level){
+    LOG("Checking VAR with VIPI and VFLEX");
+    renaming_t ren = renaming_t(cont.level,spine);
+    auto data = metavar_t::lookup(index)->read_unsolved();
+    if (ren.prune.has_value()) {
+        data.second->pruneTy(ren.prune.value());
+    }
+    std::size_t l = ren.cod; 
+    VCAPP(body,val)
+    ren.lift(); 
+    term_ptr res = val->force()->rename(index,ren); 
+    ren.pop(); 
+    term_ptr term = std::make_shared<ipi_t>(var,typ->force()->rename(index,ren),res);
+    value_ptr sol = data.second->force()->wrapAbs(ren.dom,term)->eval();
+    metavar_t::lookupTable[index] = metavar_t::lookup(index)->update(sol);
+    for (std::size_t it : data.first) {
+        check_t::lookup(it)->retry(it);
+    }
+    return std::make_shared<var_t>(cont.level-level-1);
+};
 term_ptr value_t::check_RABS(context_t& cont,name_t var, raw_ptr body) {
     value_ptr a = FRESHMETA(VU)->eval(cont.environment); // Type of FM
     cont.new_var(var,a);
@@ -166,6 +223,13 @@ term_ptr vipi_t::check_RABS(context_t& cont,name_t var, raw_ptr r) {
     term_ptr res = std::make_shared<iabs_t>(this->var, val->force()->check_RABS(cont,var,r));
     cont.pop();
     return res;
+}
+term_ptr vflex_t::check_RABS(context_t& cont,name_t var, raw_ptr r) {
+    FUNSP(std::make_shared<meta_t>(index),quote(cont.level),spine)
+    std::size_t placeholder = metavar_t(cont.local->closety(trhs)->eval()).id;
+    std::size_t c = check_t(cont,std::make_shared<rabs_t>(var,r),shared_from_this(),placeholder).id;
+    metavar_t::lookup(index)->add_block(c);
+    return std::make_shared<tcheck_t>(c);
 }
 term_ptr value_t::check_RTABS(context_t& cont,name_t var, raw_ptr typ, raw_ptr body) {
     value_ptr a = typ->check(cont,VU)->eval(cont.environment); 
@@ -192,6 +256,13 @@ term_ptr vipi_t::check_RTABS(context_t& cont,name_t var, raw_ptr typ, raw_ptr r)
     cont.pop();
     return res;
 }
+term_ptr vflex_t::check_RTABS(context_t& cont,name_t var, raw_ptr typ, raw_ptr r) {
+    FUNSP(std::make_shared<meta_t>(index),quote(cont.level),spine)
+    std::size_t placeholder = metavar_t(cont.local->closety(trhs)->eval()).id;
+    std::size_t c = check_t(cont,std::make_shared<rtabs_t>(var,typ,r),shared_from_this(),placeholder).id;
+    metavar_t::lookup(index)->add_block(c);
+    return std::make_shared<tcheck_t>(c);
+}
 term_ptr value_t::check_RIABS(context_t& cont,name_t var, raw_ptr body) {
     value_ptr a = FRESHMETA(VU)->eval(cont.environment); // Type of FM
     cont.new_var(var,a);
@@ -207,6 +278,13 @@ term_ptr vipi_t::check_RIABS(context_t& cont,name_t var, raw_ptr r) {
     term_ptr res = std::make_shared<iabs_t>(var, r->check(cont,val));
     cont.pop(var);
     return res;
+}
+term_ptr vflex_t::check_RIABS(context_t& cont,name_t var, raw_ptr r) {
+    FUNSP(std::make_shared<meta_t>(index),quote(cont.level),spine)
+    std::size_t placeholder = metavar_t(cont.local->closety(trhs)->eval()).id;
+    std::size_t c = check_t(cont,std::make_shared<riabs_t>(var,r),shared_from_this(),placeholder).id;
+    metavar_t::lookup(index)->add_block(c);
+    return std::make_shared<tcheck_t>(c);
 }
 term_ptr value_t::check_RTIABS(context_t& cont,name_t var, raw_ptr typ, raw_ptr body) {
     value_ptr a = typ->check(cont,VU)->eval(cont.environment); 
@@ -225,6 +303,13 @@ term_ptr vipi_t::check_RTIABS(context_t& cont,name_t var, raw_ptr typl, raw_ptr 
     term_ptr res = std::make_shared<iabs_t>(var, r->check(cont,val));
     cont.pop(var);
     return res;
+}
+term_ptr vflex_t::check_RTIABS(context_t& cont,name_t var, raw_ptr typl, raw_ptr r) {
+    FUNSP(std::make_shared<meta_t>(index),quote(cont.level),spine)
+    std::size_t placeholder = metavar_t(cont.local->closety(trhs)->eval()).id;
+    std::size_t c = check_t(cont,std::make_shared<rtiabs_t>(var,typl,r),shared_from_this(),placeholder).id;
+    metavar_t::lookup(index)->add_block(c);
+    return std::make_shared<tcheck_t>(c);
 }
 term_ptr value_t::check_RNABS(context_t& cont,name_t var, name_t, raw_ptr body) {
     value_ptr a = FRESHMETA(VU)->eval(cont.environment); // Type of FM
@@ -251,6 +336,13 @@ term_ptr vipi_t::check_RNABS(context_t& cont,name_t var, name_t ivar, raw_ptr r)
         return res;
     }
 }
+term_ptr vflex_t::check_RNABS(context_t& cont,name_t var, name_t ivar, raw_ptr r) {
+    FUNSP(std::make_shared<meta_t>(index),quote(cont.level),spine)
+    std::size_t placeholder = metavar_t(cont.local->closety(trhs)->eval()).id;
+    std::size_t c = check_t(cont,std::make_shared<rnabs_t>(var,r,ivar),shared_from_this(),placeholder).id;
+    metavar_t::lookup(index)->add_block(c);
+    return std::make_shared<tcheck_t>(c);
+}
 
 term_ptr value_t::check_LET(context_t& cont,name_t var,raw_ptr typ,raw_ptr def,raw_ptr body) {
     term_ptr ta = typ->check(cont,VU);
@@ -270,6 +362,13 @@ term_ptr vipi_t::check_LET(context_t& cont,name_t var,raw_ptr typ,raw_ptr def,ra
     cont.pop();
     return res;
 }
+term_ptr vflex_t::check_LET(context_t& cont, name_t var, raw_ptr typ, raw_ptr def, raw_ptr body) {
+    FUNSP(std::make_shared<meta_t>(index),quote(cont.level),spine)
+    std::size_t placeholder = metavar_t(cont.local->closety(trhs)->eval()).id;
+    std::size_t c = check_t(cont,std::make_shared<rlet_t>(var,typ,def,body),shared_from_this(),placeholder).id;
+    metavar_t::lookup(index)->add_block(c);
+    return std::make_shared<tcheck_t>(c);
+}
 
 term_ptr value_t::check_HOLE(context_t& cont) {
     term_ptr res = FRESHMETA(shared_from_this()); // Type of FM
@@ -281,6 +380,13 @@ term_ptr vipi_t::check_HOLE(context_t& cont) {
     term_ptr res = std::make_shared<iabs_t>(this->var, val->force()->check_HOLE(cont));
     cont.pop();
     return res;
+}
+term_ptr vflex_t::check_HOLE(context_t& cont) {
+    FUNSP(std::make_shared<meta_t>(index),quote(cont.level),spine)
+    std::size_t placeholder = metavar_t(cont.local->closety(trhs)->eval()).id;
+    std::size_t c = check_t(cont,std::make_shared<rhole_t>(),shared_from_this(),placeholder).id;
+    metavar_t::lookup(index)->add_block(c);
+    return std::make_shared<tcheck_t>(c);
 }
 
 term_ptr value_t::check_RAW(context_t& cont,raw_ptr r) {
@@ -296,6 +402,13 @@ term_ptr vipi_t::check_RAW(context_t& cont,raw_ptr r) {
     term_ptr res = r->check(cont,val);
     cont.pop();
     return std::make_shared<iabs_t>(var,res);
+}
+term_ptr vflex_t::check_RAW(context_t& cont,raw_ptr r) {
+    FUNSP(std::make_shared<meta_t>(index),quote(cont.level),spine)
+    std::size_t placeholder = metavar_t(cont.local->closety(trhs)->eval()).id;
+    std::size_t c = check_t(cont,r,shared_from_this(),placeholder).id;
+    metavar_t::lookup(index)->add_block(c);
+    return std::make_shared<tcheck_t>(c);
 }
 
 std::pair<value_ptr,closure_t> value_t::infer_RAPP(context_t& cont) {
@@ -945,11 +1058,11 @@ term_ptr vipi_t::pruneTyRec(std::size_t i, renaming_t& ren) {
     }
 }
 
-void value_t::retry(std::size_t c,context_t& cont,raw_ptr rterm,value_ptr,std::size_t m) {
+void value_t::retry(std::size_t c,context_t& cont,raw_ptr rterm,std::size_t m) {
     term_ptr term = rterm->check(cont,shared_from_this());
     metavar_t::lookup(m)->unify(m,cont,term);
     check_t::lookupTable[c] = std::make_shared<checked_t>(term);
 }
-void vflex_t::retry(std::size_t c,context_t&,raw_ptr,value_ptr,std::size_t) {
+void vflex_t::retry(std::size_t c,context_t&,raw_ptr,std::size_t) {
     metavar_t::lookup(index)->add_block(c);
 }

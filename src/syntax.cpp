@@ -166,12 +166,12 @@ term_ptr ldefine_t::closetm(term_ptr body) {
     return mcl->closetm(std::make_shared<let_t>(var,typ,def,body));
 }
 
-std::unique_ptr<locals_ptr> locals_t::pop() {
+locals_ptr locals_t::pop() {
     throw "Cannot pop a empty local";
 }
-std::unique_ptr<locals_ptr> lbind_t::pop() {
-    return std::make_unique<locals_ptr>(std::move(mcl));
+locals_ptr lbind_t::pop() {
+    return mcl;
 }
-std::unique_ptr<locals_ptr> ldefine_t::pop() {
-    return std::make_unique<locals_ptr>(std::move(mcl));
+locals_ptr ldefine_t::pop() {
+    return mcl;
 }

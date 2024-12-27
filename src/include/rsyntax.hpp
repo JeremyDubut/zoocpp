@@ -82,6 +82,7 @@ struct rvar_t : raw_t {
 
     std::ostream& to_string(std::ostream&);
     name_t get_name() const;
+    term_ptr check(context_t&,value_ptr);
     inferrance_t infer(context_t&);
 };
 
@@ -110,6 +111,7 @@ struct rtabs_t : rabs_t, typed {
     rtabs_t(name_t var, raw_ptr typ, raw_ptr body) : rabs_t(var,body), typed(typ) {}
     std::ostream& to_string(std::ostream&);
     term_ptr check(context_t&,value_ptr);
+    inferrance_t infer(context_t&);
 };
 struct riabs_t : rabs_t {
 
@@ -117,11 +119,13 @@ struct riabs_t : rabs_t {
 
     std::ostream& to_string(std::ostream&);
     term_ptr check(context_t&,value_ptr);
+    inferrance_t infer(context_t&);
 };
 struct rtiabs_t : riabs_t, typed {
     rtiabs_t(name_t var, raw_ptr typ, raw_ptr body) : riabs_t(var,body), typed(typ) {}
     std::ostream& to_string(std::ostream&);
     term_ptr check(context_t&,value_ptr);
+    inferrance_t infer(context_t&);
 };
 struct rnabs_t : rabs_t {
 

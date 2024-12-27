@@ -188,13 +188,16 @@ void checkentry_t::retry(std::size_t) {
 }
 void checked_t::retry(std::size_t) {}
 void unchecked_t::retry(std::size_t c) {
-    typ->force()->retry(c,cont,rterm,typ,meta);
+    typ->force()->retry(c,cont,rterm,meta);
 }
 void checkentry_t::final(std::size_t) {
     throw "Final checking an unknown check";
 }
-void checked_t::final(std::size_t) {}
+void checked_t::final(std::size_t) {
+    LOG("Check already checked");
+}
 void unchecked_t::final(std::size_t c) {
+    LOG("Check not checked yet");
     inferrance_t inf = rterm->infer(cont);
     inf = inf.term->insert(cont,inf.typ);
     check_t::lookupTable[c] = std::make_shared<checked_t>(inf.term);

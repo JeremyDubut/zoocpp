@@ -74,7 +74,7 @@ struct locals_t {
     virtual ~locals_t() {}
     virtual term_ptr closety(term_ptr);
     virtual term_ptr closetm(term_ptr);
-    virtual std::unique_ptr<locals_ptr> pop();
+    virtual locals_ptr pop();
 
 };
 struct lbind_t : locals_t {
@@ -86,7 +86,7 @@ struct lbind_t : locals_t {
     lbind_t(locals_ptr mcl, name_t& var, term_ptr typ) : mcl{mcl}, var{var}, typ{typ} {}
     term_ptr closety(term_ptr);
     term_ptr closetm(term_ptr);
-    std::unique_ptr<locals_ptr> pop();
+    locals_ptr pop();
 
 };
 struct ldefine_t : locals_t {
@@ -99,7 +99,7 @@ struct ldefine_t : locals_t {
     ldefine_t(locals_ptr mcl, name_t& var, term_ptr typ, term_ptr def) : mcl{mcl}, var{var}, typ{typ}, def{def} {}
     term_ptr closety(term_ptr);
     term_ptr closetm(term_ptr);
-    std::unique_ptr<locals_ptr> pop();
+    locals_ptr pop();
 
 };
 
