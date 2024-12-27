@@ -146,14 +146,16 @@ void unsolvedmeta_t::add_block(std::size_t index) {
 void metaentry_t::unify(std::size_t,context_t&,term_ptr) {
     throw "Unifiying an unknown metavariable";
 }
-void unsolvedmeta_t::unify(std::size_t m, context_t& cont,term_ptr t) { //TODO
+void unsolvedmeta_t::unify(std::size_t m, context_t& cont,term_ptr t) { 
+    LOG("Unifying unsolved meta");
     term_ptr sol = cont.local->closetm(t);
     metavar_t::lookupTable[m] = update(sol->eval()); 
     for (auto it : checks) {
         check_t::lookup(it)->retry(it);
     }
 }
-void solvedmeta_t::unify(std::size_t, context_t& cont,term_ptr t) { 
+void solvedmeta_t::unify(std::size_t m, context_t& cont,term_ptr t) { 
+    LOG("Unifying solved meta " << m << " with solution " << *sol << " with term " << *t);
     if (cont.environment.size() != cont.prune.size()) {
         std::stringstream ss("");
         ss << "Unification error: Inconsistency between environments "; 
@@ -164,11 +166,23 @@ void solvedmeta_t::unify(std::size_t, context_t& cont,term_ptr t) {
     value_ptr res = sol;
     for (pruning_t itf : cont.prune) {
         switch (itf) {
-            case Implicit: res = res->vApp(*ite,true); break;
-            case Explicit: res = res->vApp(*ite,false); break;
-            case None: break;
+            case Implicit: {
+                LOG("Imp case with " << **ite); 
+                res =res->vApp(*ite,true); 
+                break;
+            }
+            case Explicit: {
+                LOG("Exp case with " << **ite); 
+                res = res->vApp(*ite,false); 
+                break;
+            }
+            case None: {
+                LOG("None case");
+                break;
+            }
         }
         ite++;
+        LOG("After beta-red: " << *res);
     }
     t->eval(cont.environment)->force()->unify(cont.level,res);
 }
@@ -200,7 +214,9 @@ void unchecked_t::final(std::size_t c) {
     LOG("Check not checked yet");
     inferrance_t inf = rterm->infer(cont);
     inf = inf.term->insert(cont,inf.typ);
+    LOG("Inferrance of the check done");
     check_t::lookupTable[c] = std::make_shared<checked_t>(inf.term);
     typ->force()->unify(cont.level,inf.typ);
+    LOG("Unification of types done");
     metavar_t::lookup(meta)->unify(meta,cont,inf.term);
 }

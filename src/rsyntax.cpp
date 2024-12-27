@@ -280,9 +280,9 @@ inferrance_t raw_t::infer() {
     context_t cont {};
     inferrance_t res = infer(cont);
     std::size_t count = 0;
-    LOG("..........................");
     while (count < check_t::lookupTable.size()) {
         check_ptr cit = check_t::lookup(count);
+        LOG("..........................");
         LOG("This check is " << cit << " and " << count+1 << "/" << check_t::lookupTable.size());
         cit->final(count);
         count++;

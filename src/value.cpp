@@ -93,6 +93,7 @@ value_ptr value_t::vApp(value_ptr, bool) {
     throw ss.str();
 }
 value_ptr vabs_t::vApp(value_ptr v, bool) {
+    // LOG("Vapping " << *this);
     TCAPP(v);
     return val;
 }
@@ -725,7 +726,7 @@ void value_t::solveWithRen(std::size_t m, renaming_t& ren) {
     }
 }
 void value_t::solve(std::size_t gamma, std::size_t index, spine_t& spine) {
-    LOG("Solving " << *std::make_shared<vflex_t>(index,spine) << " with value " << *this);
+    LOG("Solving " << *std::make_shared<vflex_t>(index,spine) << " with value " << *this << " solution? " << *metavar_t::lookup(index)->get_value(index));
     renaming_t ren = renaming_t(gamma,spine);
     solveWithRen(index,ren);
 }
@@ -764,7 +765,7 @@ void vrig_t::unify(std::size_t l,value_ptr v) {
     LOG("Unification of RIG " << *this->quote(l) << " with " << *v->quote(l) << " successful");
 }
 void vflex_t::unify(std::size_t l,value_ptr v) {
-    LOG("Unifying FLEX " << *this->quote(l) << " with " << *v); 
+    LOG("Unifying FLEX " << *this << " with " << *v); 
     v->force()->unify_FLEX(l,index,spine);
     LOG("Unification of FLEX " << *this->quote(l) << " with " << *v << " successful");
 }
@@ -924,13 +925,16 @@ void value_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine) {
     solve(l,m,spine);
 }
 #define FLEXFLEX(m,sp,mp,spp) \
+    renaming_t ren; \
     try { \
-        renaming_t ren {l,sp}; \
-        std::make_shared<vflex_t>(mp,spp)->solveWithRen(m,ren); \
+        LOG("Trying renaming"); \
+        ren = renaming_t(l,sp); \
     } \
     catch (std::string e) { \
+        LOG("Catched renaming error"); \
         std::make_shared<vflex_t>(m,sp)->solve(l,mp,spp); \
-    }
+    } \
+    std::make_shared<vflex_t>(mp,spp)->solveWithRen(m,ren); 
 void vflex_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine1) {
     if (m == index) {
         if (spine.size() != spine1.size()) {
@@ -960,6 +964,7 @@ void vflex_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine1) {
                 }
             }
             catch (std::string e) {
+                LOG("Catched inverve error");
                 UNIFYSP
             }
         }
@@ -1007,7 +1012,7 @@ term_ptr value_t::pruneTy(prunings_t& prune) {
     return force()->pruneTyRec(0,ren);
 }
 term_ptr value_t::pruneTyRec(std::size_t i, renaming_t& ren) {
-    LOG("Pruning arbitrary value");
+    LOG("Pruning arbitrary value " << i << " and " << ren.prune.value().size());
     if (ren.prune.value().size() == i) {
         return this->rename(std::optional<size_t>(),ren);
     }

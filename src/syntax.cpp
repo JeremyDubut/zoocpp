@@ -28,37 +28,47 @@ value_ptr term_t::eval(environment_t&) {
     throw "Evaluation of an unknown term.";
 }
 value_ptr var_t::eval(environment_t& env) {
+    // LOG("Evaluating variable " << *this);
     return env.at(env.size()-1-index)->clone();
 }
 value_ptr abs_t::eval(environment_t& env) {
+    // LOG("Evaluating explicit lambda " << *this);
     return std::make_shared<vabs_t>(var,env,body);
 }
 value_ptr iabs_t::eval(environment_t& env) {
+    // LOG("Evaluating implicit lambda " << *this);
     return std::make_shared<viabs_t>(var,env,body);
 }
 value_ptr let_t::eval(environment_t& env) {
+    // LOG("Evaluating let ");
     env.push_back(def->eval(env));
     return body->eval(env);
 }
 value_ptr app_t::eval(environment_t& env) {
+    // LOG("Evaluating explicit application " << *this);
     return left->eval(env)->vApp(right->eval(env),false);
 }
 value_ptr iapp_t::eval(environment_t& env) {
+    // LOG("Evaluating implicit application " << *this);
     return left->eval(env)->vApp(right->eval(env),true);
 }
 value_ptr u_t::eval(environment_t&) {
     return std::make_shared<vu_t>();
 }
 value_ptr pi_t::eval(environment_t& env) {
+    // LOG("Evaluating explicit pi " << *this);
     return std::make_shared<vpi_t>(var,typ->eval(env),env,body);
 }
 value_ptr ipi_t::eval(environment_t& env) {
+    // LOG("Evaluating implicit pi " << *this);
     return std::make_shared<vipi_t>(var,typ->eval(env),env,body);
 }
 value_ptr meta_t::eval(environment_t&) {
+    // LOG("Evaluating metavariable " << *this << " with value " << *VMETA(index));
     return VMETA(index);
 }
 value_ptr appp_t::eval(environment_t& env) {
+    // LOG("Evaluating application/pruning " << *this);
     if (env.size() != prune.size()) {
         std::stringstream ss("");
         ss << "Evaluation error: Inconsistency between environments " << env.size() << " and prunings " << prune.size();
@@ -79,6 +89,7 @@ value_ptr appp_t::eval(environment_t& env) {
     }
 }
 value_ptr tcheck_t::eval(environment_t& env) {
+    // LOG("Evaluating check " << *this);
     return check_t::lookup(index)->read()->eval(env); // TODO: avoid copying of pruning
 }
 
