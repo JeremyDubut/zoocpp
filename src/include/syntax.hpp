@@ -139,6 +139,7 @@ struct meta_t : term_t {
     
     std::ostream& to_string(std::ostream&);
     value_ptr eval(environment_t&);
+    raw_ptr display_rec(names_t&);
 
 };
 

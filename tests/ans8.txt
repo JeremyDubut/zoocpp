@@ -1,0 +1,65 @@
+Parsed term: 
+Let List : (_ : 𝒰) → 𝒰 = λA (L : 𝒰) → (_ : L) → (_ : (_ : A) → (_ : L) → L) → L in
+Let nil : {A : ?_} → (List A) = λL λn λc n in
+Let cons : {A : ?_} → (_ : A) → (_ : (List A)) → (List A) = λa λas λL λn λc ((c a) (((as L) n) c)) in
+Let Bool : 𝒰 = (B : 𝒰) → (_ : B) → (_ : B) → B in
+Let true : Bool = λb λt λf t in
+Let Pair : (_ : 𝒰) → (_ : 𝒰) → 𝒰 = λA λB (P : 𝒰) → (_ : (_ : A) → (_ : B) → P) → P in
+Let pair : {A : ?_} → {B : ?_} → (_ : A) → (_ : B) → ((Pair A) B) = λa λb λP λp ((p a) b) in
+Let Nat : 𝒰 = (N : 𝒰) → (_ : (_ : N) → N) → (_ : N) → N in
+Let zero : Nat = λN λs λz z in
+Let suc : (_ : Nat) → Nat = λn λN λs λz (s (((n N) s) z)) in
+Let append : {A : ?_} → (_ : (List A)) → (_ : (List A)) → (List A) = λxs λys λL λn λc (((xs L) (((ys L) n) c)) c) in
+Let length : {A : ?_} → (_ : (List A)) → Nat = λas λN λs λz (((as N) z) λx s) in
+Let map : {A : ?_} → {B : ?_} → (_ : (_ : A) → B) → (_ : (List A)) → (List B) = λf λas λL λn λc (((as L) n) λa (c (f a))) in
+Let ST : (_ : 𝒰) → (_ : 𝒰) → 𝒰 = λS λA (_ : S) → A in
+Let runST : {A : ?_} → (_ : {S : ?_} → ((ST S) A)) → A = λf ((f {Bool}) true) in
+Let argST : {S : ?_} → ((ST S) Nat) = λ_ zero in
+Let Id : (_ : 𝒰) → 𝒰 = λA (I : 𝒰) → (_ : (_ : A) → I) → I in
+Let mkId : {A : ?_} → (_ : A) → (Id A) = λa λI λf (f a) in
+Let unId : {A : ?_} → (_ : (Id A)) → A = λi ((i ?_) λx x) in
+Let the : (A : 𝒰) → (_ : A) → A = λA λa a in
+Let const : {A : ?_} → {B : ?_} → (_ : A) → (_ : B) → A = λx λy x in
+Let IdTy : 𝒰 = {A : ?_} → (_ : A) → A in
+Let single : {A : ?_} → (_ : A) → (List A) = λa ((cons a) nil) in
+Let id : {A : ?_} → (_ : A) → A = λa a in
+Let ids : (List IdTy) = nil in
+Let oneId : (Id IdTy) = (mkId id) in
+Let app : {A : ?_} → {B : ?_} → (_ : (_ : A) → B) → (_ : A) → B = id in
+Let revapp : {A : ?_} → {B : ?_} → (_ : A) → (_ : (_ : A) → B) → B = λx λf (f x) in
+Let poly : (_ : IdTy) → ((Pair Nat) Bool) = λf ((pair (f zero)) (f true)) in
+Let choose : {A : ?_} → (_ : A) → (_ : A) → A = const in
+Let auto : (_ : IdTy) → IdTy = id in
+Let auto2 : {B : ?_} → (_ : IdTy) → (_ : B) → B = λ_ λb b in
+Let A1 : ?_ = λx λy y in
+Let A2 : (_ : IdTy) → IdTy = (choose id) in
+Let A3 : ?_ = ((choose nil) ids) in
+Let A4 : (_ : IdTy) → IdTy = λ(x: IdTy) (x x) in
+Let A5 : ?_ = (id auto) in
+Let A6 : {B : ?_} → (_ : IdTy) → (_ : B) → B = (id auto2) in
+Let A7 : ?_ = ((choose id) auto) in
+Let A9 : (_ : {A : ?_} → (_ : (_ : A) → A) → (_ : (List A)) → A) → IdTy = λf ((f (choose id)) ids) in
+Let A10 : ?_ = (poly id) in
+Let A11 : ?_ = (poly λx x) in
+Let A12 : ?_ = ((id poly) λx x) in
+Let C1 : ?_ = (length ids) in
+Let C2 : ?_ = (id ids) in
+Let C3 : IdTy = (unId oneId) in
+Let C4 : (List IdTy) = (single id) in
+Let C5 : ?_ = ((cons id) ids) in
+Let C6 : ?_ = ((cons λx x) ids) in
+Let C7 : ?_ = ((append (single suc)) (single id)) in
+Let C8 : (_ : ?_) → IdTy = λ(g: {A : ?_} → (_ : (List A)) → (_ : (List A)) → A) ((g (single id)) ids) in
+Let C9 : ?_ = ((map poly) (single id)) in
+Let C10 : ?_ = ((map unId) (single oneId)) in
+Let D1 : ?_ = ((app poly) id) in
+Let D2 : ?_ = ((revapp id) poly) in
+Let D3 : ?_ = (runST argST) in
+Let D4 : ?_ = ((app runST) argST) in
+Let D5 : ?_ = ((revapp argST) runST) in
+Let E2 : ?_ = λ(h: (_ : Nat) → {A : ?_} → (_ : A) → A) λ(k: {A : ?_} → (_ : A) → (_ : (List A)) → A) λ(lst: (List {A : ?_} → (_ : Nat) → (_ : A) → A)) ((k λx (h x)) lst) in
+Let E3 : ?_ = λ(r: (_ : {A : ?_} → (_ : A) → {B : ?_} → (_ : B) → B) → Nat) (r λx λy y) in
+𝒰
+=================
+Inferred type: 𝒰
+Normal form: 𝒰

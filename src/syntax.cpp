@@ -16,7 +16,7 @@ std::ostream& u_t::to_string(std::ostream& out) {return out << "𝒰";}
 std::ostream& pi_t::to_string(std::ostream& out) {return out << "(" << var << " : " << *typ << ") → " << *body;}
 std::ostream& ipi_t::to_string(std::ostream& out) {return out << "{" << var << " : " << *typ << "} → " << *body;}
 std::ostream& meta_t::to_string(std::ostream& out) {return out << "?" << index;}
-std::ostream& appp_t::to_string(std::ostream& out) {return out << "(" << *left << " [prunes])";}
+std::ostream& appp_t::to_string(std::ostream& out) {return out << "(" << *left << " [prunes " << prune.size() << "])";}
 std::ostream& tcheck_t::to_string(std::ostream& out) {return out << "!" << index;}
 std::ostream& operator<< (std::ostream& out, term_t& term) {return term.to_string(out);}
 
@@ -149,6 +149,9 @@ raw_ptr ipi_t::display_rec(names_t& names) {
     raw_ptr rbody = body->display_rec(names);
     names.pop_back();
     return std::make_shared<ripi_t>(var,rtyp,rbody);
+}
+raw_ptr meta_t::display_rec(names_t&) {
+    return std::make_shared<rhole_t>();
 }
 
 inferrance_t term_t::insert(context_t& cont, value_ptr typ) {

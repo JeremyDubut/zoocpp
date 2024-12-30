@@ -1,0 +1,17 @@
+Parsed term: 
+Let Type : ?_ = 𝒰 in
+Let Bool : ?_ = (B : 𝒰) → (_ : B) → (_ : B) → B in
+Let true : Bool = λ_ λt λf t in
+Let false : Bool = λ_ λt λf f in
+Let ifThenElse : {A : ?_} → (_ : Bool) → (_ : A) → (_ : A) → A = λb (b ?_) in
+Let Eq : {A : ?_} → (_ : A) → (_ : A) → Type = λ{A} λx λy (P : (_ : A) → Type) → (_ : (P x)) → (P y) in
+Let refl : {A : ?_} → {x : ?_} → (((Eq {A}) x) x) = λp λpx px in
+Let Iddy : (_ : Bool) → (_ : Type) → Type = λb λa (((ifThenElse b) a) a) in
+Let myBool : Bool = ?_ in
+Let myId : ((Iddy myBool) {A : Type} → (_ : A) → A) = λx x in
+Let myBoolIsTrue : (((Eq {Bool}) true) myBool) = refl in
+Let foo : Bool = (myId true) in
+𝒰
+=================
+Inferred type: 𝒰
+Normal form: 𝒰

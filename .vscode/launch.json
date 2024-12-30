@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/bin/ElaborationZoo",
-            "args": ["-f", "./tests/pos7.txt"],
+            "args": ["-f", "./tests/pos6.txt"],
             "stopAtEntry": false,
             "environment": [],
             "externalConsole": false,

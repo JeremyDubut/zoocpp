@@ -31,6 +31,12 @@ meta_ptr solvedmeta_t::update(value_ptr newsol) {
     LOG("Updating value of an already solved metavariable from " << *sol << " to " << *newsol);
     return std::make_shared<solvedmeta_t>(typ,newsol);
 }
+value_ptr metaentry_t::get_sol() {
+    throw "Getting solution of an unsolved metavariable";
+}
+value_ptr solvedmeta_t::get_sol() {
+    return sol;
+}
 
 metadata_t metavar_t::lookupTable {};
 meta_ptr metavar_t::lookup(std::size_t i) {

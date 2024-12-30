@@ -7,7 +7,6 @@ Let test : ?_ = λa λb ((the ((Eq ((m a) a)) λx λy y)) refl) in
 Let m : (_ : 𝒰) → (_ : 𝒰) → (_ : 𝒰) → 𝒰 = ?_ in
 Let test : ?_ = λa λb λc ((the ((Eq (((m a) b) c)) (((m c) b) a))) refl) in
 Let pr1 : ?_ = λf λx (f x) in
-Let pr2 : ?_ = λf λx λy ((f x) y) in
 Let pr3 : ?_ = λf (f 𝒰) in
 𝒰
 =================

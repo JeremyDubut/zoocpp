@@ -1,0 +1,5 @@
+let List   : U → U                             = λ A. (L : U) → L → (A → L → L) → L;
+let Nat    : U                                 = (N : U) → (N → N) → N → N;
+
+λ (h : Nat → {A} → A → A)(k : {A} → A → List A → A)(lst : List ({A} → Nat → A → A)). 
+    k h lst

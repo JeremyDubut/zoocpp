@@ -1,0 +1,12 @@
+let Nat    : U                                 = (N : U) → (N → N) → N → N;
+let zero   : Nat                               = λ N s z. z;
+let Bool   : U                                 = (B : U) → B → B → B;
+let true   : Bool                              = λ b t f. t;
+let Pair   : U → U → U                         = λ A B. (P : U) → (A → B → P) → P;
+let pair   : {A B} → A → B → Pair A B          = λ a b P p. p a b;
+let Id     : U → U                             = λ A. (I : U) → (A → I) → I;
+let IdTy   : U                                 = {A} → A → A;
+let poly   : IdTy → Pair Nat Bool              = λ f. pair (f zero) (f true);
+let unId   : {A} → Id A → A                    = λ i. i _ (λ x. x);
+
+λ x. poly (unId x) -- Not sure this fails in a correct way

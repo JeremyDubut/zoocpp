@@ -74,7 +74,7 @@ TEST_P(PositiveTests, CompareProgramOutput) {
 INSTANTIATE_TEST_SUITE_P(
     ElaborationTests,
     PositiveTests,
-    ::testing::ValuesIn(generateTestFilePairs(8))
+    ::testing::ValuesIn(generateTestFilePairs(10))
 );
 
 
@@ -95,7 +95,7 @@ TEST_P(NegativeTests, CheckForErrors) {
 INSTANTIATE_TEST_SUITE_P(
     ElaborationTests,
     NegativeTests,
-    ::testing::ValuesIn(generateNegTestFiles(2))
+    ::testing::ValuesIn(generateNegTestFiles(6))
 );
 
 

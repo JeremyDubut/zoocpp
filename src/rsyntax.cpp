@@ -208,17 +208,17 @@ inferrance_t rapp_t::infer(context_t& cont) {
     inferrance_t inff = left->infer(cont);
     inff = inff.typ->force()->insert(cont,inff.term);
     std::pair<value_ptr,closure_t> infr = inff.typ->force()->infer_RAPP(cont);
-    term_ptr rterm = right->check(cont,infr.first);
-    CAPP(rterm->eval(cont.environment),infr.second,typ)
+    term_ptr rterm = right->check(cont,infr.first->force());
+    CAPP(rterm->eval(cont.environment),infr.second,btyp)
     term_ptr res = std::make_shared<app_t>(inff.term,rterm);
-    LOG("Explicit App " << *this << " inferred with type " << *typ);
-    return inferrance_t(res,typ);
+    LOG("Explicit App " << *this << " inferred with type " << *btyp);
+    return inferrance_t(res,btyp);
 }
 inferrance_t riapp_t::infer(context_t& cont) {
     LOG("Inferring Implicit app " << *this->left << " and " << *this->right);
     inferrance_t inff = left->infer(cont);
     std::pair<value_ptr,closure_t> infr = inff.typ->force()->infer_RINAPP(cont);
-    term_ptr rterm = right->check(cont,infr.first);
+    term_ptr rterm = right->check(cont,infr.first->force());
     CAPP(rterm->eval(cont.environment),infr.second,typ)
     LOG("Argument of implicit app of type " << *infr.second.term);
     term_ptr res = std::make_shared<iapp_t>(inff.term,rterm);
@@ -230,7 +230,7 @@ inferrance_t rnapp_t::infer(context_t& cont) {
     inferrance_t inff = left->infer(cont);
     inff = inff.typ->force()->insertUntilName(cont,ivar,inff.term);
     std::pair<value_ptr,closure_t> infr = inff.typ->force()->infer_RINAPP(cont);
-    term_ptr rterm = right->check(cont,infr.first);
+    term_ptr rterm = right->check(cont,infr.first->force());
     CAPP(rterm->eval(cont.environment),infr.second,typ)
     term_ptr res = std::make_shared<iapp_t>(inff.term,rterm);
     LOG("Named Implicit App " << *this << " inferred with type " << *typ);

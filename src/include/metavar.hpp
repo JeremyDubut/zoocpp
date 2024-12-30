@@ -17,6 +17,7 @@ struct metaentry_t {
     virtual std::ostream& to_string(std::ostream&);
     virtual value_ptr get_value(value_ptr,spine_t&);
     virtual value_ptr get_value(std::size_t);
+    virtual value_ptr get_sol();
     virtual meta_ptr update(value_ptr);
     virtual std::pair<block_t,value_ptr> read_unsolved();
     virtual void add_block(std::size_t);
@@ -47,6 +48,7 @@ struct solvedmeta_t : metaentry_t{
     std::ostream& to_string(std::ostream&);
     value_ptr get_value(value_ptr,spine_t&);
     value_ptr get_value(std::size_t);
+    value_ptr get_sol();
     meta_ptr update(value_ptr);
     std::pair<block_t,value_ptr> read_unsolved();
     void add_block(std::size_t);

@@ -27,7 +27,8 @@ let test = λ a b c. the (Eq (m a b c) (m c b a)) refl;
 
 
 -- 4. Examples requiring pruning
-let pr2 = λ f x y. f x y;
+let pr1 = λ f x. f x;
+-- let pr2 = λ f x y. f x y; -- This fails with the DOE
 let pr3 = λ f. f U;
 
 U
