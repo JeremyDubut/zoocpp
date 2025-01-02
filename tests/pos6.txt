@@ -110,4 +110,7 @@ let refl : {A}{x : A} -> Eq x x
 {-let sym : {A x y} -> Eq {A} x y -> Eq y x 
   = λ {A}{x}{y} p. p (λ y. Eq y x) refl; -- Fails Here because of DOE?-}
 
+let sym : {A x y} -> Eq {A} x y -> Eq y x 
+  = λ {A}{x}{y} p. p (λ y. Eq {A} y x) (refl {A} {x}); -- Needs more annotation to work with DOE
+
 the (Eq (mul ten ten) hundred) refl 
