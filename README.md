@@ -56,7 +56,13 @@ If the tests are ok, you would get something like the following:
 
 # What is not working:
 - In the example `pos6.txt`, elaboration fails on `sym`, while it was working before the introduction of first class polymorphism.
-I do not know if this expected failure.
+I do not know if this is an expected failure. Fix: added more annotations.
 - I can't figure out how to parse named implicit arguments properly
     - temporary fix: the syntax is {! X = Term } to tell the parser explicitly about them
 - When building, you may get a warning about a comparison of integers of different signs from the .cc generated file by flex. This happens at least with `clang` on MacOS. This is harmless.
+
+# TODOS:
+- Real errors
+- a better postponment strategy?
+- cleaning up the usage of C++ polymorphism
+- ...
