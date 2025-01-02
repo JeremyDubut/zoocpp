@@ -107,7 +107,7 @@ let Eq : {A} -> A -> A -> U
 let refl : {A}{x : A} -> Eq x x
     = \_ px. px;
 
-let sym : {A x y} -> Eq {A} x y -> Eq y x -- parser gives an error here, not expecting {A} but something like {A=B}
-  = λ {A}{x}{y} p. p (λ y. Eq y x) refl; -- Fails Here, to debug
+{-let sym : {A x y} -> Eq {A} x y -> Eq y x 
+  = λ {A}{x}{y} p. p (λ y. Eq y x) refl; -- Fails Here because of DOE?-}
 
-the (Eq (mul ten ten) hundred) refl -- the elaboration does not seem to be done correctly
+the (Eq (mul ten ten) hundred) refl 

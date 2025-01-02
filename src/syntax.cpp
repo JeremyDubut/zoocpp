@@ -150,8 +150,9 @@ raw_ptr ipi_t::display_rec(names_t& names) {
     names.pop_back();
     return std::make_shared<ripi_t>(var,rtyp,rbody);
 }
-raw_ptr meta_t::display_rec(names_t&) {
-    return std::make_shared<rhole_t>();
+raw_ptr meta_t::display_rec(names_t& names) {
+    return metavar_t::lookup(index)->display(names);
+    // return std::make_shared<rhole_t>();
 }
 
 inferrance_t term_t::insert(context_t& cont, value_ptr typ) {

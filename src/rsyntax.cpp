@@ -204,12 +204,33 @@ inferrance_t rvar_t::infer(context_t& cont){
     }
 }
 inferrance_t rapp_t::infer(context_t& cont) {
+
     LOG("Inferring Explicit app " << *this->left << " and " << *this->right);
+
+    // Inferring the lhs
     inferrance_t inff = left->infer(cont);
+
+    // Processing the type, checking the rhs
     inff = inff.typ->force()->insert(cont,inff.term);
     std::pair<value_ptr,closure_t> infr = inff.typ->force()->infer_RAPP(cont);
     term_ptr rterm = right->check(cont,infr.first->force());
+
+    // Processing the result
     CAPP(rterm->eval(cont.environment),infr.second,btyp)
+
+    // Checking the postponed checks
+    // LOG("-------------------------");
+    // std::size_t count = check_t::done_check;
+    // while (count < check_t::lookupTable.size()) {
+    //     check_ptr cit = check_t::lookup(count);
+    //     LOG("..........................");
+    //     LOG("This check is " << cit << " and " << count+1 << "/" << check_t::lookupTable.size());
+    //     cit->final(count);
+    //     count++;
+    // }
+    // check_t::done_check = check_t::lookupTable.size();
+    // LOG("-------------------------");
+
     term_ptr res = std::make_shared<app_t>(inff.term,rterm);
     LOG("Explicit App " << *this << " inferred with type " << *btyp);
     return inferrance_t(res,btyp);
@@ -279,7 +300,7 @@ inferrance_t rhole_t::infer(context_t& cont) {
 inferrance_t raw_t::infer() {
     context_t cont {};
     inferrance_t res = infer(cont);
-    std::size_t count = 0;
+    std::size_t count = check_t::done_check;
     while (count < check_t::lookupTable.size()) {
         check_ptr cit = check_t::lookup(count);
         LOG("..........................");
@@ -287,6 +308,7 @@ inferrance_t raw_t::infer() {
         cit->final(count);
         count++;
     }
+    check_t::done_check = check_t::lookupTable.size();
     return res;
 }
 

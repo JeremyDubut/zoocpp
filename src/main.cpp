@@ -58,6 +58,12 @@ int main(int argc, char* argv[])
     }
     catch (std::string e) {
         std::cout << "Error: " << e << std::endl;
+        // std::cout << "Number of postponed checks: " << check_t::lookupTable.size() << std::endl;
+        std::size_t count = 0;
+        for (check_ptr it : check_t::lookupTable) {
+            std::cout << "Check number " << count << " " << *it << std::endl;
+            count++;
+        }
     }
     catch (std::out_of_range const& e) {
         std::cout << "Out of range: " << e.what() << std::endl;

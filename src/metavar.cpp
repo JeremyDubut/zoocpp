@@ -37,6 +37,12 @@ value_ptr metaentry_t::get_sol() {
 value_ptr solvedmeta_t::get_sol() {
     return sol;
 }
+raw_ptr metaentry_t::display(names_t&) {
+    return std::make_shared<rhole_t>();
+}
+raw_ptr solvedmeta_t::display(names_t& names) {
+    return sol->quote(0)->nf()->display_rec(names);
+}
 
 metadata_t metavar_t::lookupTable {};
 meta_ptr metavar_t::lookup(std::size_t i) {
@@ -61,6 +67,7 @@ check_ptr check_t::lookup(std::size_t i) {
         throw ss.str();
     }
 }
+std::size_t check_t::done_check = 0;
 
 void renaming_t::lift() {
     ren[cod] = dom;
@@ -225,4 +232,17 @@ void unchecked_t::final(std::size_t c) {
     typ->force()->unify(cont.level,inf.typ);
     LOG("Unification of types done");
     metavar_t::lookup(meta)->unify(meta,cont,inf.term);
+}
+
+std::ostream& checkentry_t::to_string(std::ostream& out) {
+    return out << "unknown check";
+}
+std::ostream& checked_t::to_string(std::ostream& out) {
+    return out << "already checked";
+}
+std::ostream& unchecked_t::to_string(std::ostream& out) {
+    return out << "unchecked with meta " << meta;
+}
+std::ostream& operator<< (std::ostream &out, checkentry_t &c) {
+    return c.to_string(out);
 }

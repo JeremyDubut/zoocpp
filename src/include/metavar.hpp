@@ -18,6 +18,7 @@ struct metaentry_t {
     virtual value_ptr get_value(value_ptr,spine_t&);
     virtual value_ptr get_value(std::size_t);
     virtual value_ptr get_sol();
+    virtual raw_ptr display(names_t&);
     virtual meta_ptr update(value_ptr);
     virtual std::pair<block_t,value_ptr> read_unsolved();
     virtual void add_block(std::size_t);
@@ -49,6 +50,7 @@ struct solvedmeta_t : metaentry_t{
     value_ptr get_value(value_ptr,spine_t&);
     value_ptr get_value(std::size_t);
     value_ptr get_sol();
+    raw_ptr display(names_t&);
     meta_ptr update(value_ptr);
     std::pair<block_t,value_ptr> read_unsolved();
     void add_block(std::size_t);
@@ -77,6 +79,7 @@ struct checkentry_t {
     virtual term_ptr read();
     virtual void retry(std::size_t);
     virtual void final(std::size_t);
+    virtual std::ostream& to_string(std::ostream&);
 
 };
 struct checked_t : checkentry_t {
@@ -86,6 +89,7 @@ struct checked_t : checkentry_t {
     term_ptr read();
     void retry(std::size_t);
     void final(std::size_t);
+    std::ostream& to_string(std::ostream&);
 
 };
 struct unchecked_t : checkentry_t {
@@ -103,12 +107,15 @@ struct unchecked_t : checkentry_t {
     term_ptr read();
     void retry(std::size_t);
     void final(std::size_t);
+    std::ostream& to_string(std::ostream&);
 };
+std::ostream& operator<< (std::ostream&, checkentry_t&);
 
 struct check_t {
 
     static checkdata_t lookupTable;
     static check_ptr lookup(std::size_t);
+    static std::size_t done_check;
 
     std::size_t id;
 

@@ -1012,6 +1012,7 @@ inferrance_t value_t::insert(context_t&,term_ptr term) {
     return inferrance_t(term,shared_from_this());
 }
 inferrance_t vipi_t::insert(context_t& cont,term_ptr term) {
+    LOG("Inserting an implicit");
     term_ptr m = FRESHMETA(typ); // Type of FM
     value_ptr a = m->eval(cont.environment);
     cont.new_var(var,a);
