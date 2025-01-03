@@ -88,7 +88,7 @@ TEST_P(NegativeTests, CheckForErrors) {
     std::string actualOutput = runProgramWithInput(inputFile);
 
     // Compare actual and expected output
-    EXPECT_THAT(actualOutput, HasSubstr("Error:")) << "Error not found in input file: " << inputFile;
+    EXPECT_THAT(actualOutput, HasSubstr("Unification error:")) << "Error not found in input file: " << inputFile;
 }
 
 // Define test cases with negative input files

@@ -40,6 +40,7 @@ set(SOURCES
     src/value.cpp
     src/rsyntax.cpp
     src/metavar.cpp
+    src/errors.cpp
     ${FLEX_Lexer_OUTPUTS}
     ${BISON_Parser_OUTPUTS}
 )

@@ -2,8 +2,10 @@
 
 #ifdef DEBUG
     #define LOG(x) std::cout << x << std::endl
+    #define ARG(m) m
 #else
     #define LOG(x)
+    #define ARG(m)
 #endif
 
 

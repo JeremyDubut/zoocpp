@@ -167,7 +167,7 @@ void unsolvedmeta_t::unify(std::size_t m, context_t& cont,term_ptr t) {
         check_t::lookup(it)->retry(it);
     }
 }
-void solvedmeta_t::unify(std::size_t m, context_t& cont,term_ptr t) { 
+void solvedmeta_t::unify(std::size_t ARG(m), context_t& cont,term_ptr t) { 
     LOG("Unifying solved meta " << m << " with solution " << *sol << " with term " << *t);
     if (cont.environment.size() != cont.prune.size()) {
         std::stringstream ss("");

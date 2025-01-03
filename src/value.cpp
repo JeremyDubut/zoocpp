@@ -2,6 +2,7 @@
 #include "rsyntax.hpp"
 #include "syntax.hpp"
 #include "metavar.hpp"
+#include "errors.hpp"
 
 #define TCAPP(v) CAPP(v,this->body,val)
 #define VARL std::make_shared<vrig_t>(l)
@@ -88,32 +89,25 @@ std::ostream& operator<< (std::ostream& out, value_t& value) {
 }
 
 value_ptr value_t::vApp(value_ptr, bool) {
-    std::stringstream ss("");
-    ss << "Beta reduction error: Trying to apply to a term that is not a lambda or a metavariable: " << *this;
-    throw ss.str();
+    throw beta_red_e(shared_from_this());
 }
 value_ptr vabs_t::vApp(value_ptr v, bool) {
-    // LOG("Vapping " << *this << " with " << *v);
     TCAPP(v);
     return val;
 }
 value_ptr vflex_t::vApp(value_ptr v, bool icit) {
-    spine_t spine_cp = spine;
-    try {
-        if (index == 61 &&  v->inverse() == 32) {
-            LOG("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-            LOG("Var " << v->inverse() << " added in " << index);
-        }
-    }
-    catch (std::string e) {
-    }
-    spine_cp.push_back(std::make_pair(v,icit));
-    return std::make_shared<vflex_t>(index,spine_cp);
+    spine.push_back(std::make_pair(v,icit));
+    return shared_from_this();
+    // spine_t spine_cp = spine;
+    // spine_cp.push_back(std::make_pair(v,icit));
+    // return std::make_shared<vflex_t>(index,spine_cp);
 }
 value_ptr vrig_t::vApp(value_ptr v, bool icit) {
-    spine_t spine_cp = spine;
-    spine_cp.push_back(std::make_pair(v,icit));
-    return std::make_shared<vrig_t>(level,spine_cp);
+    spine.push_back(std::make_pair(v,icit));
+    return shared_from_this();
+    // spine_t spine_cp = spine;
+    // spine_cp.push_back(std::make_pair(v,icit));
+    // return std::make_shared<vrig_t>(level,spine_cp);
 }
 
 value_ptr value_t::vAppSp(spine_t& spine) {
@@ -125,7 +119,7 @@ value_ptr value_t::vAppSp(spine_t& spine) {
 }
 
 term_ptr value_t::quote(std::size_t) {
-    throw "Reification error: Reification of an unknown value.";
+    throw reification_e(shared_from_this());
 }
 term_ptr vabs_t::quote(std::size_t l) {
     VTCAPP;
@@ -162,7 +156,7 @@ term_ptr value_t::check_VAR(context_t& cont, name_t var) {
         return inf.term;
     }
     else {
-        throw "Check error: Unbounded variable "+var;
+        throw unbound_var_e(var);
     }
 }
 term_ptr vipi_t::check_VAR(context_t& cont,name_t name) {
@@ -443,7 +437,7 @@ std::pair<value_ptr,closure_t> vpi_t::infer_RAPP(context_t&) {
     return std::make_pair(typ,body);
 }
 std::pair<value_ptr,closure_t> vipi_t::infer_RAPP(context_t&) {
-    throw "Inferrance error: Icit mismatch Explicit Implicit";
+    throw icit_mismatch_ei_e(shared_from_this());
 }
 
 std::pair<value_ptr,closure_t> value_t::infer_RINAPP(context_t& cont) {
@@ -465,10 +459,10 @@ std::pair<value_ptr,closure_t> vipi_t::infer_RINAPP(context_t&) {
     return std::make_pair(typ,body);
 }
 std::pair<value_ptr,closure_t> vpi_t::infer_RINAPP(context_t&) {
-    throw "Inferrance error: Icit mismatch Implicit Explicit";
+    throw icit_mismatch_ie_e(shared_from_this());
 }
-inferrance_t value_t::insertUntilName(context_t&,name_t,term_ptr) {
-    throw "Inferrance error: No named implicit argument";
+inferrance_t value_t::insertUntilName(context_t&,name_t ivar,term_ptr) {
+    throw no_named_icit_arg_e(ivar,shared_from_this());
 }
 inferrance_t vipi_t::insertUntilName(context_t& cont,name_t ivar,term_ptr lterm) {
     if (ivar == var) {
@@ -478,7 +472,13 @@ inferrance_t vipi_t::insertUntilName(context_t& cont,name_t ivar,term_ptr lterm)
         term_ptr m = FRESHMETA(typ); // Type of FM
         value_ptr mv = m->eval(cont.environment);
         TCAPP(mv)
-        return val->force()->insertUntilName(cont,ivar,std::make_shared<iapp_t>(lterm,m));
+        try {
+            return val->force()->insertUntilName(cont,ivar,std::make_shared<iapp_t>(lterm,m));
+        }
+        catch (no_named_icit_arg_e& e) {
+            e.val = shared_from_this();
+            throw e;
+        }
     }
 }
 
@@ -503,36 +503,33 @@ value_ptr value_t::force() {
 }
 value_ptr vflex_t::force() {
     return metavar_t::lookup(index)->get_value(shared_from_this(),spine);
-    // metaentry_t entry = metavar_t::lookup(index);
-    // if (entry.has_value()) {
-    //     return entry.value()->clone()->vAppSp(spine)->force();
-    // }
-    // return shared_from_this();
 }
 
 std::size_t value_t::inverse() {
-    std::stringstream ss("");
-    ss << "Unification error: non-variable in inverse " << *this;
-    throw ss.str();
+    throw non_var_e(shared_from_this());
 }
 std::size_t vrig_t::inverse() {
     if (spine.empty()) {
         return level;
     }
-    throw "Unification error: variable with non-empty spine in inverse";
+    throw non_empty_spine_e(level,spine.size());
 }
 
 term_ptr value_t::wrapAbs(std::size_t level, term_ptr term) {
-    return force()->wrapAbsRec(level,0,term);
+    try {
+        return force()->wrapAbsRec(level,0,term);
+    }
+    catch (wrap_e& e) {
+        e.typ = shared_from_this();
+        throw e;
+    }
 }
 term_ptr value_t::wrapAbsRec(std::size_t l, std::size_t lp, term_ptr term) {
     if (l == lp) {
         return term;
     }
     else {
-        std::stringstream ss("");
-        ss << "Unification error: Trying to wrap a term that does not have a pi type " << *this << "; " << l << " " << lp;
-        throw ss.str();
+        throw wrap_e(l);
     }
 }
 term_ptr vpi_t::wrapAbsRec(std::size_t l, std::size_t lp, term_ptr term) {
@@ -636,7 +633,7 @@ void value_t::pruneVflexCases(
 
     switch (status) {
         case NeedsPruning: {
-            throw "Unification error: pruning a non-variable";
+            throw prune_non_var_e(shared_from_this());
         }
         default: {
             tspine.push_back(std::make_pair(rename(m,ren),icit));
@@ -656,13 +653,7 @@ void vrig_t::pruneVflexCases(
             tspine.push_back(std::make_pair(std::make_shared<var_t>(ren.dom-ren.ren[level]-1),icit));
         }
         else if (status == OK_NonRenaming) {
-            std::stringstream ss("");
-            ss << "Unification error: spine is not a renaming in pruning with RIG " << level << std::endl;
-            ss << "Renaming:" << std::endl;
-            for (auto it : ren.ren) {
-                ss << "\t" << it.first << " => " << it.second << std::endl;
-            }
-            throw ss.str();
+            throw spine_not_renaming_e(level);
         }
         else {
             tspine.push_back(std::make_pair(std::optional<term_ptr>(),icit));
@@ -672,7 +663,7 @@ void vrig_t::pruneVflexCases(
     else {
         switch (status) {
             case NeedsPruning: {
-                throw "Unification error: pruning a RIG with non-empty spine";
+                throw prune_non_empty_spine_e(level,spine.size());
             }
             default: {
                 if (ren.ren.contains(level)) {
@@ -681,9 +672,7 @@ void vrig_t::pruneVflexCases(
                     status = OK_NonRenaming;
                 }
                 else {
-                    std::stringstream ss("");
-                    ss << "Unification error: espacing variable " << *this;
-                    throw ss.str();
+                    throw escape_rig_var_e(level);
                 }
             }
         }
@@ -691,7 +680,7 @@ void vrig_t::pruneVflexCases(
 }
 
 term_ptr value_t::rename(std::optional<std::size_t>,renaming_t&) {
-    throw "Unification error: Renaming in unknown value";
+    throw rename_e(shared_from_this());
 }
 term_ptr vu_t::rename(std::optional<std::size_t>,renaming_t&) {
     return std::make_shared<u_t>();
@@ -710,7 +699,7 @@ term_ptr vipi_t::rename(std::optional<std::size_t> m,renaming_t& ren) {
 }
 term_ptr vflex_t::rename(std::optional<std::size_t> m,renaming_t& ren) {
     if (m.has_value() && index == m.value()) {
-        throw "Unification error: occurs check";
+        throw occurs_check_e(index);
     }
     return pruneVflex(m,ren,index,spine);
 }
@@ -719,9 +708,7 @@ term_ptr vrig_t::rename(std::optional<std::size_t> m,renaming_t& ren) {
         RENAMESP(std::make_shared<var_t>(ren.dom-ren.ren[level]-1),m,spine)
     }
     else {
-        std::stringstream ss("");
-        ss << "Unification error: escaping RIGID " << *this;
-        throw ss.str();
+        throw rename_escape_rig_var_e(level);
     }
 }
 
@@ -747,9 +734,7 @@ void value_t::solve(std::size_t gamma, std::size_t index, spine_t& spine) {
 }
 
 void value_t::unify(std::size_t,value_ptr) {
-    std::stringstream ss("");
-    ss << "Unifying an unknown value " << *this;
-    throw ss.str();
+    throw unknown_unification_e(shared_from_this());
 }
 void vabs_t::unify(std::size_t l,value_ptr v) {
     LOG("Unifying Explicit Lam " << *this->quote(l) << " with " << *v->quote(l));  
@@ -805,9 +790,7 @@ void vabs_t::unify_IABS(std::size_t l ,closure_t& body1) {
     val1->force()->unify(l+1,val);
 }
 void value_t::unify_U(std::size_t) {
-    std::stringstream ss("");
-    ss << "Unification error: rigid mismatch between U and " << *this;
-    throw ss.str();
+    throw rigid_u_e(shared_from_this());
 }
 void vu_t::unify_U(std::size_t) {}
 // The case vabs_t is necessarily an error because vApp is not define on U
@@ -816,9 +799,7 @@ void vflex_t::unify_U(std::size_t l) {
     std::make_shared<vu_t>()->solve(l,index,spine);
 }
 void value_t::unify_PI(std::size_t,name_t,value_ptr,closure_t&) {
-    std::stringstream ss("");
-    ss << "Unification error: rigid mismatch between Pi and " << *this;
-    throw ss.str();
+    throw rigid_pi_e(shared_from_this());
 }
 void vpi_t::unify_PI(std::size_t l,name_t,value_ptr typ1,closure_t& body1) {
     typ1->force()->unify(l,typ);
@@ -827,7 +808,7 @@ void vpi_t::unify_PI(std::size_t l,name_t,value_ptr typ1,closure_t& body1) {
     val1->force()->unify(l+1,val);
 }
 void vipi_t::unify_PI(std::size_t,name_t,value_ptr,closure_t&) {
-    throw "Unification error: icit mismatch in pi";
+    throw icit_pi_e();
 }
 void vflex_t::unify_PI(std::size_t level, name_t var, value_ptr typ,closure_t& body) {
     LOG("Solving " << *this << " with explicit pi " << *typ << " and " << body);
@@ -851,9 +832,7 @@ void vflex_t::unify_PI(std::size_t level, name_t var, value_ptr typ,closure_t& b
     }
 }
 void value_t::unify_IPI(std::size_t,name_t,value_ptr,closure_t&) {
-    std::stringstream ss("");
-    ss << "Unification error: rigid mismatch between iPi and " << *this;
-    throw ss.str();
+    throw rigid_ipi_e(shared_from_this());
 }
 void vipi_t::unify_IPI(std::size_t l,name_t,value_ptr typ1,closure_t& body1) {
     typ1->force()->unify(l,typ);
@@ -883,18 +862,14 @@ void vflex_t::unify_IPI(std::size_t level, name_t var, value_ptr typ,closure_t& 
     }
 }
 void value_t::unify_RIG(std::size_t, std::size_t, spine_t&) {
-    std::stringstream ss("");
-    ss << "Unification error: rigid mismatch between VRIGID and " << *this;
-    throw ss.str();
+    throw rigid_rig_e(shared_from_this());
 }
 void vrig_t::unify_RIG(std::size_t l, std::size_t m, spine_t& spine1) {
     if (m == level && spine.size() == spine1.size()) {
         UNIFYSP
     }
     else {
-        std::stringstream ss("");
-        ss << "Unification error: rigid mismatch between VRIGID ?" << m << " and VRIGID ?" << level;
-        throw ss.str();
+        throw rigid_rig_rig_e(m,level);
     }
 }
 void vabs_t::unify_RIG(std::size_t l, std::size_t m, spine_t& spine) {
@@ -926,13 +901,7 @@ void vflex_t::unify_RIG(std::size_t l, std::size_t level, spine_t& spine1) {
         }
     }
     else {
-        std::stringstream ss("");
-        ss << "Unification error: escaping FLEX ?" << level << " " << std::endl;
-        ss << "Renaming:" << std::endl;
-        for (auto it : ren.ren) {
-            ss << "\t" << it.first << " => " << it.second << std::endl;
-        }
-        throw ss.str();
+        throw escape_flex_var_e(level);
     }
 
 }
@@ -945,7 +914,7 @@ void value_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine) {
         LOG("Trying renaming"); \
         ren = renaming_t(l,sp); \
     } \
-    catch (std::string e) { \
+    catch (inverse_e& e) { \
         LOG("Catched renaming error " << e); \
         std::make_shared<vflex_t>(m,sp)->solve(l,mp,spp); \
         return; \
@@ -954,10 +923,7 @@ void value_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine) {
 void vflex_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine1) {
     if (m == index) {
         if (spine.size() != spine1.size()) {
-            std::stringstream ss("");
-            ss << "Unification error: inconsistency between intersected spines ";
-            ss << spine.size() << " and " << spine1.size();
-            throw ss.str();
+            throw intersect_e(spine.size(),spine1.size());
         }
         bool pruneCheck = false;
         auto it1 = spine1.begin();
@@ -979,7 +945,7 @@ void vflex_t::unify_FLEX(std::size_t l, std::size_t m, spine_t& spine1) {
                     pruneCheck = true;
                 }
             }
-            catch (std::string e) {
+            catch (inverse_e& e) {
                 LOG("Catched inverve error");
                 UNIFYSP
             }
@@ -1034,9 +1000,7 @@ term_ptr value_t::pruneTyRec(std::size_t i, renaming_t& ren) {
         return this->rename(std::optional<size_t>(),ren);
     }
     else {
-        std::stringstream ss("");
-        ss << "Unification error: Pruning a non-pi type " << *this->force();
-        throw ss.str();
+        throw prune_non_pi_e(shared_from_this());
     }
 }
 term_ptr vpi_t::pruneTyRec(std::size_t i, renaming_t& ren) {

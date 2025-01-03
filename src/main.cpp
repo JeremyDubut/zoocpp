@@ -6,6 +6,7 @@
 #include "syntax.hpp"
 #include "value.hpp"
 #include "rsyntax.hpp"
+#include "errors.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -52,6 +53,24 @@ int main(int argc, char* argv[])
         std::cout << "Normal form: " << *inf.term->nf()->display() << std::endl;
 
         return res;
+    }
+    catch (unification_e& e) {
+        std::cout << "Unification error: " << e << std::endl;
+    }
+    catch (beta_red_e& e) {
+        std::cout << "Beta reduction error: " << e << std::endl;
+    }
+    catch (reification_e& e) {
+        std::cout << "Reification error: " << e << std::endl;
+    }
+    catch (check_e& e) {
+        std::cout << "Type check error: " << e << std::endl;
+    }
+    catch (inferrance_e& e) {
+        std::cout << "Type inferrance error: " << e << std::endl;
+    }
+    catch (prune_e& e) {
+        std::cout << "Pruning error: " << e << std::endl;
     }
     catch (char const* e) {
         std::cout << "Error: " << e << std::endl;

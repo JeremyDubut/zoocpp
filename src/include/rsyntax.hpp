@@ -45,7 +45,7 @@ struct context_t {
     void pop(name_t);
     void pop();
 };
-std::ostream& operator<< (std::ostream& out, context_t& cont);
+std::ostream& operator<< (std::ostream&, context_t&);
 
 struct raw_t : std::enable_shared_from_this<raw_t> {
 
