@@ -72,7 +72,6 @@ I do not know if this is an expected failure. Fix: added more annotations.
 - When building, you may get a warning about a comparison of integers of different signs from the .cc generated file by flex. This happens at least with `clang` on MacOS. This is harmless.
 
 # TODOS:
-- Real errors
 - a better postponment strategy?
 - cleaning up the usage of C++ polymorphism
 - ...

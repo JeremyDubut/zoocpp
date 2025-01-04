@@ -96,18 +96,18 @@ value_ptr vabs_t::vApp(value_ptr v, bool) {
     return val;
 }
 value_ptr vflex_t::vApp(value_ptr v, bool icit) {
-    spine.push_back(std::make_pair(v,icit));
-    return shared_from_this();
-    // spine_t spine_cp = spine;
-    // spine_cp.push_back(std::make_pair(v,icit));
-    // return std::make_shared<vflex_t>(index,spine_cp);
+    // spine.push_back(std::make_pair(v,icit));
+    // return shared_from_this();
+    spine_t spine_cp = spine;
+    spine_cp.push_back(std::make_pair(v,icit));
+    return std::make_shared<vflex_t>(index,spine_cp);
 }
 value_ptr vrig_t::vApp(value_ptr v, bool icit) {
-    spine.push_back(std::make_pair(v,icit));
-    return shared_from_this();
-    // spine_t spine_cp = spine;
-    // spine_cp.push_back(std::make_pair(v,icit));
-    // return std::make_shared<vrig_t>(level,spine_cp);
+    // spine.push_back(std::make_pair(v,icit));
+    // return shared_from_this();
+    spine_t spine_cp = spine;
+    spine_cp.push_back(std::make_pair(v,icit));
+    return std::make_shared<vrig_t>(level,spine_cp);
 }
 
 value_ptr value_t::vAppSp(spine_t& spine) {
