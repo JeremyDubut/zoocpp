@@ -3,6 +3,7 @@ Elaboration zoo in C++
 
 ## References
 - https://github.com/AndrasKovacs/elaboration-zoo (Haskell)
+This is the main reference. This repository is an attempt to reimplement this zoo in C++ to learn about elaboration.
 - https://github.com/smimram/ocaml-elaboration-zoo (Ocaml)
 
 ## Requirements
@@ -74,4 +75,4 @@ I do not know if this is an expected failure. Fix: added more annotations.
 # TODOS:
 - a better postponment strategy?
 - cleaning up the usage of C++ polymorphism
-- ...
+- thinking whether cloning terms when taken from context is necessary
