@@ -85,6 +85,49 @@ struct intersect_e : unification_e {
         : size1{size1}, size2{size2} {}
     std::ostream& mywhat(std::ostream&) const noexcept;
 };
+struct get_val_e : unification_e {
+    std::ostream& mywhat(std::ostream&) const noexcept;
+};
+struct meta_lookup_e : unification_e {
+    std::size_t index;
+    meta_lookup_e(const std::size_t index) : index{index} {};
+    std::ostream& mywhat(std::ostream&) const noexcept;
+};
+struct check_lookup_e : unification_e {
+    std::size_t index;
+    check_lookup_e(const std::size_t index) : index{index} {};
+    std::ostream& mywhat(std::ostream&) const noexcept;
+};
+struct read_unknown_meta_e : unification_e {
+    std::ostream& mywhat(std::ostream&) const noexcept;
+};
+struct read_solved_meta_e : unification_e {
+    std::ostream& mywhat(std::ostream&) const noexcept;
+};
+struct block_unknown_meta_e : unification_e {
+    std::ostream& mywhat(std::ostream&) const noexcept;
+};
+struct block_solved_meta_e : unification_e {
+    std::ostream& mywhat(std::ostream&) const noexcept;
+};
+struct unify_unknown_meta_e : unification_e {
+    std::ostream& mywhat(std::ostream&) const noexcept;
+};
+struct unify_solved_inconsistent_e : unification_e {
+    std::size_t size1, size2;
+    unify_solved_inconsistent_e(const std::size_t size1,const std::size_t size2) 
+        : size1{size1}, size2{size2} {}
+    std::ostream& mywhat(std::ostream&) const noexcept;
+};
+struct read_unknown_check_e : unification_e {
+    std::ostream& mywhat(std::ostream&) const noexcept;
+};
+struct retry_unknown_check_e : unification_e {
+    std::ostream& mywhat(std::ostream&) const noexcept;
+};
+struct final_unknown_check_e : unification_e {
+    std::ostream& mywhat(std::ostream&) const noexcept;
+};
 struct prune_e : myexception {};
 struct prune_non_var_e : prune_e {
     value_ptr non_var;
@@ -144,5 +187,49 @@ struct no_named_icit_arg_e : inferrance_e {
     value_ptr val;
     no_named_icit_arg_e(const name_t& ivar, const value_ptr val) : 
         ivar{ivar}, val{val} {}
+    std::ostream& mywhat(std::ostream&) const noexcept;
+};
+struct infer_unknown_e : inferrance_e {
+    std::ostream& mywhat(std::ostream&) const noexcept;
+};
+struct infer_named_imp_lam_e : inferrance_e {
+    raw_ptr lam;
+    infer_named_imp_lam_e(const raw_ptr lam) : lam{lam} {}
+    std::ostream& mywhat(std::ostream&) const noexcept;
+};
+struct infer_unbound_var_e : check_e {
+    name_t var;
+    infer_unbound_var_e(const name_t& var) : var{var} {}
+    std::ostream& mywhat(std::ostream&) const noexcept;
+};
+struct evaluation_e : myexception {};
+struct eval_unknown_e : evaluation_e {
+    std::ostream& mywhat(std::ostream&) const noexcept;
+};
+struct eval_appp_inconsistent_e : evaluation_e {
+    std::size_t size1, size2;
+    eval_appp_inconsistent_e(const std::size_t size1,const std::size_t size2) 
+        : size1{size1}, size2{size2} {}
+    std::ostream& mywhat(std::ostream&) const noexcept;
+};
+struct parser_e : myexception {};
+struct build_e : parser_e {
+    raw_ptr non_util;
+    build_e(const raw_ptr non_util) : non_util{non_util} {}
+    std::ostream& mywhat(std::ostream&) const noexcept;
+};
+struct auto_build_e : parser_e {
+    raw_ptr non_list;
+    auto_build_e(const raw_ptr non_list) : non_list{non_list} {}
+    std::ostream& mywhat(std::ostream&) const noexcept;
+};
+struct pushback_e : parser_e {
+    raw_ptr non_list;
+    pushback_e(const raw_ptr non_list) : non_list{non_list} {}
+    std::ostream& mywhat(std::ostream&) const noexcept;
+};
+struct namelist_e : parser_e {
+    raw_ptr non_list;
+    namelist_e(const raw_ptr non_list) : non_list{non_list} {}
     std::ostream& mywhat(std::ostream&) const noexcept;
 };

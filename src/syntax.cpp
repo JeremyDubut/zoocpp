@@ -1,6 +1,7 @@
 #include "syntax.hpp"
 #include "value.hpp"
 #include "rsyntax.hpp"
+#include "errors.hpp"
 
 #define VMETA(n) \
     metavar_t::lookup(n)->get_value(n)->clone()
@@ -25,7 +26,7 @@ value_ptr term_t::eval() {
     return eval(env);
 }
 value_ptr term_t::eval(environment_t&) {
-    throw "Evaluation of an unknown term.";
+    throw eval_unknown_e();
 }
 value_ptr var_t::eval(environment_t& env) {
     // LOG("Evaluating variable " << *this);
@@ -70,9 +71,7 @@ value_ptr meta_t::eval(environment_t&) {
 value_ptr appp_t::eval(environment_t& env) {
     // LOG("Evaluating application/pruning " << *this);
     if (env.size() != prune.size()) {
-        std::stringstream ss("");
-        ss << "Evaluation error: Inconsistency between environments " << env.size() << " and prunings " << prune.size();
-        throw ss.str();
+        throw eval_appp_inconsistent_e(env.size(),prune.size());
     }
     else {
         auto ite = env.begin();

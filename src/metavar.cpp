@@ -3,16 +3,17 @@
 #include <iostream>
 #include "value.hpp"
 #include "syntax.hpp"
+#include "errors.hpp"
 
 value_ptr metaentry_t::get_value(value_ptr, spine_t&) {
-    throw "Getting a value out of an unknown metavariable";
+    throw get_val_e();
 }
 value_ptr unsolvedmeta_t::get_value(value_ptr v, spine_t&) {return v;}
 value_ptr solvedmeta_t::get_value(value_ptr, spine_t& spine) {
     return sol->clone()->vAppSp(spine)->force();
 }
 value_ptr metaentry_t::get_value(std::size_t) {
-   throw "Getting a value out of an unknown metavariable";
+   throw get_val_e();
 }
 value_ptr unsolvedmeta_t::get_value(std::size_t index) {
     return std::make_shared<vflex_t>(index);
@@ -21,7 +22,7 @@ value_ptr solvedmeta_t::get_value(std::size_t) {
     return sol;}
 
 meta_ptr metaentry_t::update(value_ptr) {
-    throw "Updating an unknown metaentry";
+    throw get_val_e();
 }
 meta_ptr unsolvedmeta_t::update(value_ptr sol) {
     LOG("Updating value of unsolved metavariable to " << *sol);
@@ -32,7 +33,7 @@ meta_ptr solvedmeta_t::update(value_ptr newsol) {
     return std::make_shared<solvedmeta_t>(typ,newsol);
 }
 value_ptr metaentry_t::get_sol() {
-    throw "Getting solution of an unsolved metavariable";
+    throw get_val_e();
 }
 value_ptr solvedmeta_t::get_sol() {
     return sol;
@@ -50,9 +51,7 @@ meta_ptr metavar_t::lookup(std::size_t i) {
         return lookupTable[i];
     }
     else {
-        std::stringstream ss("");
-        ss << "Lookup error: non-existing metavariable " << i;
-        throw ss.str();
+        throw meta_lookup_e(i);
     }
 }
 
@@ -62,9 +61,7 @@ check_ptr check_t::lookup(std::size_t i) {
         return lookupTable[i];
     }
     else {
-        std::stringstream ss("");
-        ss << "Lookup error: non-existing check " << i;
-        throw ss.str();
+        throw check_lookup_e(i);
     }
 }
 std::size_t check_t::done_check = 0;
@@ -137,27 +134,27 @@ std::ostream& operator<< (std::ostream& out, metaentry_t& m) {
 }
 
 std::pair<block_t,value_ptr> metaentry_t::read_unsolved() {
-    throw "Reading unknown metavariable";
+    throw read_unknown_meta_e();
 }
 std::pair<block_t,value_ptr> unsolvedmeta_t::read_unsolved() {
     return std::make_pair(checks,typ);
 }
 std::pair<block_t,value_ptr> solvedmeta_t::read_unsolved() {
-    throw "Unification error: trying to prune solved metavariable";
+    throw read_solved_meta_e();
 }
 
 void metaentry_t::add_block(std::size_t) {
-    throw "Adding a blocked check in an unknown metavariable";
+    throw block_unknown_meta_e();
 }
 void solvedmeta_t::add_block(std::size_t) {
-    throw "Unification error: a solved metavariable cannot block a check";
+    throw block_solved_meta_e();
 }
 void unsolvedmeta_t::add_block(std::size_t index) {
     checks.insert(index);
 }
 
 void metaentry_t::unify(std::size_t,context_t&,term_ptr) {
-    throw "Unifiying an unknown metavariable";
+    throw unify_unknown_meta_e();
 }
 void unsolvedmeta_t::unify(std::size_t m, context_t& cont,term_ptr t) { 
     LOG("Unifying unsolved meta");
@@ -170,10 +167,7 @@ void unsolvedmeta_t::unify(std::size_t m, context_t& cont,term_ptr t) {
 void solvedmeta_t::unify(std::size_t ARG(m), context_t& cont,term_ptr t) { 
     LOG("Unifying solved meta " << m << " with solution " << *sol << " with term " << *t);
     if (cont.environment.size() != cont.prune.size()) {
-        std::stringstream ss("");
-        ss << "Unification error: Inconsistency between environments "; 
-        ss << cont.environment.size() << " and prunings " << cont.prune.size();
-        throw ss.str();
+        throw unify_solved_inconsistent_e(cont.environment.size(),cont.prune.size());
     }
     auto ite = cont.environment.begin();
     value_ptr res = sol;
@@ -201,7 +195,7 @@ void solvedmeta_t::unify(std::size_t ARG(m), context_t& cont,term_ptr t) {
 }
 
 term_ptr checkentry_t::read() {
-    throw "Reading an unknown checkentry";
+    throw read_unknown_check_e();
 }
 term_ptr checked_t::read() {
     return res;
@@ -211,14 +205,14 @@ term_ptr unchecked_t::read() {
 }
 
 void checkentry_t::retry(std::size_t) {
-    throw "Retrying an unknown check";
+    throw retry_unknown_check_e();
 }
 void checked_t::retry(std::size_t) {}
 void unchecked_t::retry(std::size_t c) {
     typ->force()->retry(c,cont,rterm,meta);
 }
 void checkentry_t::final(std::size_t) {
-    throw "Final checking an unknown check";
+    throw final_unknown_check_e();
 }
 void checked_t::final(std::size_t) {
     LOG("Check already checked");

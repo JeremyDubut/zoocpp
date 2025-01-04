@@ -45,6 +45,16 @@ If the tests are ok, you would get something like the following:
 
     Total Test time (real) =   <some_time>
 
+To run on a particular file:
+
+    ./bin/ElaborationZoo -f <path_to_file>
+
+You can also run
+
+    ./bin/ElaborationZoo
+
+without options and write your terms in the standard input.
+
 ## What is working:
 - implemented up to step 5
     - de Bruijn indices and levels

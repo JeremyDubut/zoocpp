@@ -1,6 +1,7 @@
 #include "value.hpp"
 #include "rsyntax.hpp"
 #include "syntax.hpp"
+#include "errors.hpp"
 
 std::ostream& operator<< (std::ostream& out, raw_t& term) {return term.to_string(out);}
 std::ostream& raw_t::to_string(std::ostream& out) {return out << "Unknown raw term";}
@@ -134,7 +135,7 @@ term_ptr rhole_t::check(context_t& cont,value_ptr v) {
 }
 
 inferrance_t raw_t::infer(context_t&){
-    throw "Inferrance error: Inferring an unknown raw term.";
+    throw infer_unknown_e();
 }
 inferrance_t rabs_t::infer(context_t& cont){
     LOG("Inferring Explicit Lam" << *this);
@@ -185,7 +186,7 @@ inferrance_t rtiabs_t::infer(context_t& cont){
     return res;
 }
 inferrance_t rnabs_t::infer(context_t&) {
-    throw "Inferrance error: Cannot infer a named implicit lambda";
+    throw infer_named_imp_lam_e(shared_from_this());
 }
 inferrance_t ru_t::infer(context_t&){
     // LOG("Inferring U");
@@ -200,7 +201,7 @@ inferrance_t rvar_t::infer(context_t& cont){
         return inferrance_t(term,res->typ->clone());
     }
     else {
-        throw "Inferrance error: Unbounded variable "+name;
+        throw infer_unbound_var_e(name);
     }
 }
 inferrance_t rapp_t::infer(context_t& cont) {
@@ -313,7 +314,7 @@ inferrance_t raw_t::infer() {
 }
 
 
-raw_ptr raw_t::build(raw_ptr) {throw "Parser error: Cannot build a non-utility raw type";}
+raw_ptr raw_t::build(raw_ptr) {throw build_e(shared_from_this());}
 raw_ptr iicit::build(raw_ptr r) {return std::make_shared<riabs_t>(bind,r);}
 raw_ptr eicit::build(raw_ptr r) {return std::make_shared<rabs_t>(bind,r);}
 raw_ptr tiicit::build(raw_ptr r) {return std::make_shared<rtiabs_t>(bind,typ,r);}
@@ -363,7 +364,7 @@ raw_ptr arglist_t::build(raw_ptr r) {
     }
     return res;
 }
-raw_ptr raw_t::auto_build() {throw "Parser error: Cannot auto build a non-list of arguments";}
+raw_ptr raw_t::auto_build() {throw auto_build_e(shared_from_this());}
 raw_ptr arglist_t::auto_build() {
     raw_ptr res = args[0];
     for (auto it = args.begin()+1; it!=args.end(); it++) {
@@ -372,10 +373,10 @@ raw_ptr arglist_t::auto_build() {
     return res;
 }
 
-void raw_t::push_back(raw_ptr) {throw "Parser error: Cannot push_back on a non-list type";}
+void raw_t::push_back(raw_ptr) {throw pushback_e(shared_from_this());}
 void pibinderlist_t::push_back(raw_ptr r) {binders.push_back(r);}
 void arglist_t::push_back(raw_ptr r) {args.push_back(r);}
 void icitlist_t::push_back(raw_ptr r) {icits.push_back(r);}
 
-std::vector<name_t>* raw_t::get_namelist() { throw "Parser error: Not a name list"; }
+std::vector<name_t>* raw_t::get_namelist() { throw namelist_e(shared_from_this()); }
 std::vector<name_t>* namelist_t::get_namelist() { return names; }

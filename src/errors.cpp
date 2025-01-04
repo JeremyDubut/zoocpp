@@ -1,5 +1,6 @@
 #include "errors.hpp"
 #include "value.hpp"
+#include "rsyntax.hpp"
 
 
 std::ostream& operator<< (std::ostream& out, myexception& e) {
@@ -88,4 +89,67 @@ std::ostream& intersect_e::mywhat(std::ostream& out) const noexcept {
 }
 std::ostream& prune_non_pi_e::mywhat(std::ostream& out) const noexcept {
     return out << "Prune non variable value " << *non_pi;
+}
+std::ostream& get_val_e::mywhat(std::ostream& out) const noexcept {
+    return out << "Unknown metavariable has no value";
+}
+std::ostream& meta_lookup_e::mywhat(std::ostream& out) const noexcept {
+    return out << "Lookup of non-existing metavariable " << index;
+}
+std::ostream& check_lookup_e::mywhat(std::ostream& out) const noexcept {
+    return out << "Lookup of non-existing metavariable " << index;
+}
+std::ostream& read_unknown_meta_e::mywhat(std::ostream& out) const noexcept {
+    return out << "Cannot prune a unknown metavariable";
+}
+std::ostream& read_solved_meta_e::mywhat(std::ostream& out) const noexcept {
+    return out << "Cannot prune a solved metavariable";
+}
+std::ostream& block_unknown_meta_e::mywhat(std::ostream& out) const noexcept {
+    return out << "A unknown metavariable cannot block a check";
+}
+std::ostream& block_solved_meta_e::mywhat(std::ostream& out) const noexcept {
+    return out << "A solved metavariable cannot block a check";
+}
+std::ostream& unify_unknown_meta_e::mywhat(std::ostream& out) const noexcept {
+    return out << "Cannot unify a unknown metavariable";
+}
+std::ostream& unify_solved_inconsistent_e::mywhat(std::ostream& out) const noexcept {
+    return out << "Inconsistency between environment of size " << size1 << " and prunings of size " << size2;
+}
+std::ostream& read_unknown_check_e::mywhat(std::ostream& out) const noexcept {
+    return out << "A unknown check cannot be read";
+}
+std::ostream& retry_unknown_check_e::mywhat(std::ostream& out) const noexcept {
+    return out << "A unknown check cannot be retried";
+}
+std::ostream& final_unknown_check_e::mywhat(std::ostream& out) const noexcept {
+    return out << "A unknown check cannot be checked";
+}
+std::ostream& eval_unknown_e::mywhat(std::ostream& out) const noexcept {
+    return out << "A unknown term cannot be evaluated";
+}
+std::ostream& eval_appp_inconsistent_e::mywhat(std::ostream& out) const noexcept {
+    return out << "Inconsistency between environment of size " << size1 << " and prunings of size " << size2;
+}
+std::ostream& infer_unknown_e::mywhat(std::ostream& out) const noexcept {
+    return out << "A unknown raw term cannot be inferred";
+}
+std::ostream& infer_named_imp_lam_e::mywhat(std::ostream& out) const noexcept {
+    return out << "Cannot infer named implicit lambda " << *lam;
+}
+std::ostream& infer_unbound_var_e::mywhat(std::ostream& out) const noexcept {
+    return out << "Unbound variable " << var;
+}
+std::ostream& build_e::mywhat(std::ostream& out) const noexcept {
+    return out << "Cannot build a non-utility raw term " << *non_util;
+}
+std::ostream& auto_build_e::mywhat(std::ostream& out) const noexcept {
+    return out << "Cannot auto-build a non-list of arguments " << *non_list;
+}
+std::ostream& pushback_e::mywhat(std::ostream& out) const noexcept {
+    return out << "Cannot push-back on a non-list " << *non_list;
+}
+std::ostream& namelist_e::mywhat(std::ostream& out) const noexcept {
+    return out << "Not a namelist " << *non_list;
 }

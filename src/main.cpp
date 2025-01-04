@@ -42,13 +42,10 @@ int main(int argc, char* argv[])
         std::cout << *term << std::endl;
         std::cout << "=================" << std::endl;
 
-        #ifdef DEBUG
-            LOG("Debug log:");
-        #endif
+        LOG("Debug log:");
         inferrance_t inf = term->infer();
-        #ifdef DEBUG
-            LOG("=================");
-        #endif
+        LOG("=================");
+        
         std::cout << "Inferred type: " << *inf.typ->display() << std::endl;
         std::cout << "Normal form: " << *inf.term->nf()->display() << std::endl;
 
@@ -72,19 +69,13 @@ int main(int argc, char* argv[])
     catch (prune_e& e) {
         std::cout << "Pruning error: " << e << std::endl;
     }
+    catch (evaluation_e& e) {
+        std::cout << "Evaluation error: " << e << std::endl;
+    }
+    catch (parser_e& e) {
+        std::cout << "Parser error: " << e << std::endl;
+    }
     catch (char const* e) {
         std::cout << "Error: " << e << std::endl;
-    }
-    catch (std::string e) {
-        std::cout << "Error: " << e << std::endl;
-        // std::cout << "Number of postponed checks: " << check_t::lookupTable.size() << std::endl;
-        std::size_t count = 0;
-        for (check_ptr it : check_t::lookupTable) {
-            std::cout << "Check number " << count << " " << *it << std::endl;
-            count++;
-        }
-    }
-    catch (std::out_of_range const& e) {
-        std::cout << "Out of range: " << e.what() << std::endl;
     }
 }
